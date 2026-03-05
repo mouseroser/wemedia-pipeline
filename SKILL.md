@@ -27,9 +27,6 @@ main（小光）是顶层编排中心，所有 agent 由 main 直接 spawn（mod
 ```
 main（小光，编排中心）
 ├── Step 1：选题分级 + 平台分析
-```
-main（小光，编排中心）
-├── Step 1：选题分级 + 平台分析
 ├── Step 2：spawn 织梦(gemini) → 快速调研 + spawn 珊瑚(notebooklm) → 深度调研（M/L 级）
 ├── Step 3：spawn wemedia → 内容创作（文案 + 配图提示词）
 ├── Step 4：spawn 织梦(gemini) → 内容审查（质量/合规/SEO）
@@ -40,6 +37,27 @@ main（小光，编排中心）
 └── Step 7：晨星确认 → 交付通知
 全程：main 补发关键推送到各职能群 + 监控群（sub-agent 推送不可靠）
 ```
+
+### Workspace 架构
+
+**独立 Workspace**：
+- `~/.openclaw/workspace` - main agent 工作区（编排中心）
+- `~/.openclaw/workspace-wemedia` - wemedia agent 工作区
+- `~/.openclaw/workspace-gemini` - gemini (织梦) agent 工作区
+- `~/.openclaw/workspace-{agent}` - 其他 agent 各自的工作区
+
+**协作文件路径**：
+- 共享上下文：`workspace/shared-context/` (THESIS.md, FEEDBACK-LOG.md, SIGNALS.md)
+- Agent 协作：`workspace/intel/` (单写者原则，多读者)
+- 内容产物：`workspace-wemedia/drafts/`, `workspace-wemedia/platforms/`, `workspace-wemedia/content-calendar/`
+- 缓存：`workspace/cache/` (调研结果、平台模板)
+- 历史记录：`workspace/cost-tracking.json`
+
+**文件传递规则**：
+- Sub-agent 在自己的 workspace 中工作
+- 产出文件通过 task 返回值传递给 main
+- Main 整合后保存到共享路径或 wemedia workspace
+- 跨 agent 协作通过 workspace/intel/ 目录（单写者原则）
 
 ## Agent Roles
 

@@ -304,6 +304,8 @@
 - 部署后还需补 `plugins.allow`；否则 OpenClaw 会警告“discovered non-bundled plugins may auto-load”。最终修复：在 `openclaw.json` 中显式允许 `memory-lancedb-pro`、`telegram`、`device-pair`、`phone-control`、`talk-voice`、`acpx`
 - P1 开启结果（2026-03-07）：`autoRecall = true`、`autoCapture = true`、`captureAssistant = false`；当前继续保持 `rerank = none`、`enableManagementTools = false`
 - P1 验收结果（2026-03-07）：插件 CLI `memory-pro` 可用；`memory_store -> memory_recall -> memory_forget` 再次验证通过；删除后数据库记录会消失，但 markdown mirror 仍需手动清理
+- 历史记忆导入（2026-03-07）：已将 `MEMORY.md` 转成 JSON 并导入 `memory-lancedb-pro`，当前 `agent:main` 作用域已有 60 条历史记忆，CLI 检索可正常命中
+- 检索调优结论（2026-03-07）：大段 markdown 历史记忆适合归档与 CLI 检索；对聊天内高频问题（如“晨星是谁”“Telegram”“自动记录”“intel/collaboration 规则”），还应额外补充一层短句型原子记忆，这样 `memory_recall` 命中会明显更稳
 
 ## 踩坑笔记（续）
 

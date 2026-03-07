@@ -295,6 +295,14 @@
   - 强制重建索引：`openclaw memory index --force --agent main`
 - 修复后状态：`memory_search` 恢复为 `provider: "ollama"`, `mode: "hybrid"`
 
+### memory-lancedb-pro 部署结论（2026-03-07）
+- 已按当前 `openclaw.json` 架构成功接入 `memory-lancedb-pro`，插件来源：`~/.openclaw/workspace/plugins/memory-lancedb-pro`
+- 当前运行模式：`embedding = openai-compatible + Ollama`、模型 `nomic-embed-text`、`sessionStrategy = systemSessionMemory`、`rerank = none`、`autoCapture = false`、`autoRecall = false`
+- `openclaw status` 已显示 `Memory: enabled (plugin memory-lancedb-pro)`，`openclaw plugins info memory-lancedb-pro` 状态为 loaded
+- 最小验收通过：`memory_store` → `memory_recall` → `memory_forget` 整条链路可用，召回模式显示 `vector+BM25`
+- 踩坑：`memory_forget` 删除数据库记录后，不会自动回删 markdown mirror；若做烟雾测试，需手动清理 `memory/YYYY-MM-DD.md` 中的测试行
+- 部署后还需补 `plugins.allow`；否则 OpenClaw 会警告“discovered non-bundled plugins may auto-load”。最终修复：在 `openclaw.json` 中显式允许 `memory-lancedb-pro`、`telegram`、`device-pair`、`phone-control`、`talk-voice`、`acpx`
+
 ## 踩坑笔记（续）
 
 ### mode=session 在 Telegram 下不可用

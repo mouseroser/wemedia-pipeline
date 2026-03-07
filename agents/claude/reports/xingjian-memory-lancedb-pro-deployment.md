@@ -1,814 +1,349 @@
-# memory-lancedb-pro 部署方案
+# memory-lancedb-pro 部署方案（OpenClaw JSON 架构落地版）
 
 ## 一、技术分析
 
 ### 1.1 核心功能
-- **混合检索引擎**: Vector (LanceDB ANN) + BM25 (FTS) 双路召回，RRF 融合策略
-- **Cross-Encoder 重排**: 支持 Jina/SiliconFlow/Pinecone API，5s 超时保护 + 降级机制
-- **多阶段打分流水线**: 
-  - 近期提升 (Recency Boost): exp(-ageDays / halfLife) * weight
-  - 重要性权重: score *= (0.7 + 0.3 * importance)
-  - 长度归一化: score *= 1 / (1 + 0.5 * log2(len/anchor))
-  - 时间衰减: score *= 0.5 + 0.5 * exp(-ageDays / halfLife)
-  - MMR 多样性: cosine > 0.85 → 降权
-  - 硬性最低分: score < threshold → 丢弃
-- **多作用域隔离**: global / agent:<id> / project:<id> / user:<id> / custom:<name>
-- **自适应检索**: 跳过寒暄/命令/简单确认，强制检索记忆相关关键词
-- **噪声过滤**: 过滤拒绝回复、元提问、HEARTBEAT
-- **会话策略**: systemSessionMemory (默认) / memoryReflection / none
-- **自进化**: LEARNINGS.md / ERRORS.md / FEATURE_REQUESTS.md 钩子
-- **Markdown 镜像**: 双写到 agent workspace memory/YYYY-MM-DD.md
-- **Auto-Capture & Auto-Recall**: agent_end 自动提取 + before_agent_start 自动注入
+- **混合检索引擎**：Vector (LanceDB ANN) + BM25 (FTS) 双路召回
+- **Cross-Encoder 重排**：支持 Jina / SiliconFlow / Pinecone 等兼容接口
+- **多阶段打分流水线**：Recency Boost / Importance / Length Norm / Time Decay / MMR / Hard Min Score
+- **多作用域隔离**：`global` / `agent:<id>` / `project:<id>` / `user:<id>` / `custom:<name>`
+- **自适应检索**：跳过寒暄、命令、简单确认，命中记忆相关问题时强制检索
+- **噪声过滤**：过滤拒绝回复、元提问、HEARTBEAT 等低质量记忆
+- **会话策略**：`systemSessionMemory` / `memoryReflection` / `none`
+- **自进化**：`.learnings/LEARNINGS.md` / `ERRORS.md` / `FEATURE_REQUESTS.md`
+- **Markdown 镜像**：双写到 agent workspace 的 `memory/YYYY-MM-DD.md`
+- **Auto-Capture & Auto-Recall**：`agent_end` 自动抽取 + `before_agent_start` 自动注入
 
-### 1.2 架构依赖
-```
-核心依赖:
-- @lancedb/lancedb >= 0.26.2 (Vector + FTS)
-- openai (OpenAI-compatible embedding 抽象)
-- @sinclair/typebox (Schema 验证)
+### 1.2 对当前 OpenClaw 的关键适配结论
+这次部署不能沿用旧版 `config.yaml` 思路，必须按当前机器的 `openclaw.json` 架构落地。
 
-外部服务:
-- Embedding API: Jina / OpenAI / Gemini / Ollama
-- Rerank API: Jina / SiliconFlow / Pinecone (可选)
+**当前环境实况（已验证）**：
+- OpenClaw 主配置文件：`/Users/lucifinil_chen/.openclaw/openclaw.json`
+- 主 workspace：`/Users/lucifinil_chen/.openclaw/workspace`
+- 当前内置 `memory_search` 已修复为：`ollama + nomic-embed-text`
+- 本机 Ollama 可用，`http://127.0.0.1:11434/v1/embeddings` 已实测可返回向量
+- 当前 `plugins` 配置中尚未接入 `memory-lancedb-pro`
 
-运行环境:
-- Node.js >= 18
-- OpenClaw Gateway
-- TypeScript 编译环境 (开发时)
-```
+**最关键的兼容性判断**：
+- `memory-lancedb-pro` 的插件 schema 要求 `embedding.provider = "openai-compatible"`
+- 它不是原生 `gemini` / `ollama` provider 配置风格，而是统一走 OpenAI-compatible embeddings 接口
+- 因此这份部署方案的第一阶段应该直接走 **本地 Ollama OpenAI-compatible 路线**，不走原生 Gemini embeddings
 
-### 1.3 与内置版本对比优势
-| 功能 | memory-lancedb | memory-lancedb-pro |
-|------|----------------|-------------------|
-| BM25 全文检索 | ❌ | ✅ |
-| Cross-Encoder 重排 | ❌ | ✅ |
-| 多阶段打分 | ❌ | ✅ (6 层) |
-| 作用域隔离 | ❌ | ✅ |
-| 噪声过滤 | ❌ | ✅ |
-| 自适应检索 | ❌ | ✅ |
-| CLI 管理工具 | ❌ | ✅ |
-| 会话内省 | ❌ | ✅ |
+### 1.3 与当前内置记忆系统的关系
+当前系统里已经有两层记忆能力：
+1. **内置 `memory_search` 文件记忆检索层**：索引 `MEMORY.md` + `memory/**/*.md`
+2. **待部署的 `memory-lancedb-pro` 插件层**：提供更强的混合检索、作用域隔离、Auto-Capture / Auto-Recall、工具与治理能力
 
-## 二、环境适配
+**部署策略**：
+- 不先拆当前已经修好的 `memory_search`
+- 先把 `memory-lancedb-pro` 作为新的 memory plugin 接入 OpenClaw
+- 第一阶段只做**稳定落地 + 基础验证**，不一开始就打开全部高级功能
 
-### 2.1 Gemini Embedding 适配
-**现有环境**: 已配置 Gemini API，可用于 Embedding 生成
+## 二、落地架构（按当前目录体系）
 
-**配置方案**:
-```yaml
-# ~/.openclaw/config.yaml
-plugins:
-  load:
-    paths:
-      - ~/.openclaw/plugins/memory-lancedb-pro
-  slots:
-    memory: memory-lancedb-pro
+### 2.1 目录角色划分
+- `intel/collaboration/`：多 agent 联合分析阶段的共享材料目录
+- `workspace/plugins/`：正式进入运行态的插件目录
+- `agents/*/reports/`：正式报告产物目录
 
-memory-lancedb-pro:
-  embedding:
-    provider: gemini
-    model: text-embedding-004
-    apiKey: ${GEMINI_API_KEY}
-    baseURL: https://generativelanguage.googleapis.com/v1beta
-    dimensions: 768
-    taskType: RETRIEVAL_DOCUMENT  # 存储时
-  
-  # 检索时使用 RETRIEVAL_QUERY
-  retrieval:
-    taskType: RETRIEVAL_QUERY
-```
+### 2.2 本项目的正确落位
+当前已经有一份分析用仓库副本：
+- `~/.openclaw/workspace/intel/collaboration/memory-lancedb-pro/`
 
-**关键点**:
-- Gemini Embedding API 兼容 OpenAI SDK 格式
-- `text-embedding-004` 输出 768 维向量
-- 使用 `taskType` 区分存储/检索场景（提升准确率）
+这份副本应继续保留为：
+- 多 agent 联合阅读 / 对比 / 复核的**共享分析材料**
 
-### 2.2 Ollama Embedding 适配
-**本地部署方案**: 使用 Ollama 运行本地 Embedding 模型
+真正要被 OpenClaw 加载的运行态插件，应提升到：
+- `~/.openclaw/workspace/plugins/memory-lancedb-pro/`
 
-**推荐模型**:
-- `nomic-embed-text` (768 维, 8k context)
-- `mxbai-embed-large` (1024 维, 512 context)
+**结论**：
+- `intel/collaboration/` 放分析副本
+- `workspace/plugins/` 放运行副本
+- 不要让 OpenClaw 直接加载 `intel/collaboration/` 里的共享分析目录作为正式运行插件路径
 
-**配置方案**:
-```yaml
-memory-lancedb-pro:
-  embedding:
-    provider: ollama
-    model: nomic-embed-text
-    baseURL: http://localhost:11434/v1
-    dimensions: 768
-  
-  # Ollama 不需要 apiKey
-```
+## 三、推荐部署路线
 
-**部署步骤**:
+### 3.1 P0 路线（推荐，先稳后强）
+**目标**：先把插件稳定挂载到当前 OpenClaw，上线最小可用能力。
+
+**P0 配置原则**：
+- Embedding：本地 Ollama（`nomic-embed-text`）
+- Rerank：关闭
+- Session Strategy：`systemSessionMemory`
+- Auto-Capture：先关
+- Auto-Recall：先关
+- Management Tools：先关
+- Markdown Mirror：开
+
+这样做的原因：
+- 避免在第一轮引入额外外部 API 依赖
+- 避免和当前已经可用的内置记忆链叠加出不可控噪声
+- 先验证插件加载、存储、检索、作用域隔离、Markdown 镜像是否稳定
+
+### 3.2 P1 路线（P0 验证通过后）
+在 P0 稳定后，再逐步打开：
+- `autoCapture: true`
+- `autoRecall: true`
+- `enableManagementTools: true`（按需）
+
+### 3.3 P2 路线（最后再上）
+如果后续确实需要更高检索质量，再考虑：
+- 接入 Jina / SiliconFlow / Pinecone 的 cross-encoder rerank
+- 或者单独为 rerank 增加外部 API key
+
+**不建议第一天就上 rerank。**
+
+## 四、可直接执行的部署步骤
+
+### 4.1 前置检查
 ```bash
-# 1. 安装 Ollama
-curl -fsSL https://ollama.com/install.sh | sh
+# 1) 检查 OpenClaw 状态
+openclaw status
 
-# 2. 拉取 Embedding 模型
-ollama pull nomic-embed-text
+# 2) 检查 Ollama 是否在线
+curl http://127.0.0.1:11434/api/tags
 
-# 3. 验证服务
-curl http://localhost:11434/v1/embeddings \
-  -H "Content-Type: application/json" \
-  -d '{"model":"nomic-embed-text","input":"test"}'
+# 3) 检查 OpenAI-compatible embeddings 端点
+curl http://127.0.0.1:11434/v1/embeddings \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer ollama-local' \
+  --data '{"model":"nomic-embed-text","input":"test"}'
 ```
 
-### 2.3 Rerank 降级策略
-**问题**: 现有环境可能无 Jina/SiliconFlow Rerank API
-
-**解决方案 1: 禁用 Rerank**
-```yaml
-memory-lancedb-pro:
-  reranker:
-    enabled: false  # 完全禁用，使用 cosine 相似度排序
-```
-
-**解决方案 2: 本地 Rerank (推荐)**
-```yaml
-memory-lancedb-pro:
-  reranker:
-    provider: ollama
-    model: bge-reranker-v2-m3
-    baseURL: http://localhost:11434/v1
-    timeout: 5000
-```
-
-部署本地 Reranker:
+### 4.2 提升共享分析副本为正式运行副本
 ```bash
-ollama pull bge-reranker-v2-m3
-```
-
-**解决方案 3: Gemini 模拟 Rerank**
-```yaml
-memory-lancedb-pro:
-  reranker:
-    provider: gemini-rerank  # 自定义 provider
-    model: gemini-2.0-flash-exp
-    apiKey: ${GEMINI_API_KEY}
-    prompt: |
-      Rate relevance (0-1) between query and document:
-      Query: {query}
-      Document: {document}
-      Score:
-```
-
-## 三、部署步骤
-
-### 3.1 前置检查
-```bash
-# 1. 检查 Node.js 版本
-node --version  # >= 18
-
-# 2. 检查 OpenClaw Gateway 状态
-openclaw gateway status
-
-# 3. 检查 Embedding 服务可用性
-# Gemini:
-curl -H "x-goog-api-key: $GEMINI_API_KEY" \
-  https://generativelanguage.googleapis.com/v1beta/models
-
-# Ollama:
-curl http://localhost:11434/api/tags
-```
-
-### 3.2 安装插件
-```bash
-# 1. 克隆仓库
-cd ~/.openclaw/plugins
-git clone https://github.com/win4r/memory-lancedb-pro.git
-
-# 2. 安装依赖
-cd memory-lancedb-pro
+cd ~/.openclaw/workspace
+mkdir -p plugins
+rsync -a intel/collaboration/memory-lancedb-pro/ plugins/memory-lancedb-pro/
+cd plugins/memory-lancedb-pro
 npm install
-
-# 3. 编译 TypeScript (如果需要)
-npm run build
-
-# 4. 验证插件结构
-ls -la dist/  # 应包含 index.js, store.js, retriever.js 等
 ```
 
-### 3.3 配置插件
+说明：
+- 这里不是重新从 GitHub 拉一份，而是把已经过星鉴阅读/分析的副本提升为运行副本
+- 分析副本保留在 `intel/collaboration/`；运行副本落在 `plugins/`
+
+### 4.3 `openclaw.json` 接入方式
+在现有 `openclaw.json` 中，保留已有 `plugins.entries.telegram`，追加如下结构：
+
+```json
+{
+  "plugins": {
+    "load": {
+      "paths": [
+        "plugins/memory-lancedb-pro"
+      ]
+    },
+    "entries": {
+      "telegram": {
+        "enabled": true
+      },
+      "memory-lancedb-pro": {
+        "enabled": true,
+        "config": {
+          "embedding": {
+            "provider": "openai-compatible",
+            "apiKey": "ollama-local",
+            "model": "nomic-embed-text",
+            "baseURL": "http://127.0.0.1:11434/v1",
+            "dimensions": 768
+          },
+          "dbPath": "~/.openclaw/memory/lancedb-pro",
+          "autoCapture": false,
+          "autoRecall": false,
+          "autoRecallMinLength": 8,
+          "captureAssistant": false,
+          "enableManagementTools": false,
+          "sessionStrategy": "systemSessionMemory",
+          "retrieval": {
+            "mode": "hybrid",
+            "vectorWeight": 0.7,
+            "bm25Weight": 0.3,
+            "minScore": 0.35,
+            "rerank": "none",
+            "candidatePoolSize": 20,
+            "recencyHalfLifeDays": 14,
+            "recencyWeight": 0.1,
+            "filterNoise": true,
+            "lengthNormAnchor": 500,
+            "hardMinScore": 0.35,
+            "timeDecayHalfLifeDays": 60,
+            "reinforcementFactor": 0.5,
+            "maxHalfLifeMultiplier": 3
+          },
+          "scopes": {
+            "default": "global",
+            "definitions": {
+              "global": { "description": "Shared knowledge" },
+              "agent:main": { "description": "Main private memory" },
+              "agent:claude": { "description": "Claude private memory" },
+              "agent:gemini": { "description": "Gemini private memory" }
+            },
+            "agentAccess": {
+              "main": ["global", "agent:main"],
+              "claude": ["global", "agent:claude"],
+              "gemini": ["global", "agent:gemini"]
+            }
+          },
+          "mdMirror": {
+            "enabled": true,
+            "dir": "memory-md"
+          },
+          "selfImprovement": {
+            "enabled": true,
+            "beforeResetNote": true,
+            "skipSubagentBootstrap": true,
+            "ensureLearningFiles": true
+          }
+        }
+      }
+    },
+    "slots": {
+      "memory": "memory-lancedb-pro"
+    }
+  }
+}
+```
+
+### 4.4 关键说明
+- `embedding.provider` 必须按插件 schema 写成 `openai-compatible`
+- `apiKey` 对 Ollama 可以是占位符，`ollama-local` 即可
+- `baseURL` 必须指向 OpenAI-compatible 路径：`http://127.0.0.1:11434/v1`
+- 第一阶段 `rerank` 设为 `none`
+- 第一阶段不要打开 `autoCapture` / `autoRecall`
+- 当前已经修好的 `agents.defaults.memorySearch`（内置文件记忆索引）先不动
+
+### 4.5 重启与验证
 ```bash
-# 编辑 OpenClaw 配置
-nano ~/.openclaw/config.yaml
-```
-
-**最小配置 (Gemini Embedding)**:
-```yaml
-plugins:
-  load:
-    paths:
-      - ~/.openclaw/plugins/memory-lancedb-pro
-  slots:
-    memory: memory-lancedb-pro
-
-memory-lancedb-pro:
-  # 数据库路径
-  dbPath: ~/.openclaw/data/memory-lancedb-pro
-  
-  # Embedding 配置
-  embedding:
-    provider: gemini
-    model: text-embedding-004
-    apiKey: ${GEMINI_API_KEY}
-    baseURL: https://generativelanguage.googleapis.com/v1beta
-    dimensions: 768
-    taskType: RETRIEVAL_DOCUMENT
-  
-  # 检索配置
-  retrieval:
-    topK: 10
-    vectorWeight: 0.7
-    bm25Weight: 0.3
-    minScore: 0.3
-    taskType: RETRIEVAL_QUERY
-  
-  # 禁用 Rerank (初期)
-  reranker:
-    enabled: false
-  
-  # 会话策略
-  sessionStrategy: systemSessionMemory
-  
-  # 自动召回/捕获
-  autoRecall: true
-  autoCapture: true
-  
-  # Markdown 镜像
-  mdMirror:
-    enabled: true
-    dir: ~/.openclaw/workspace/agents/{agentId}/memory
-```
-
-### 3.4 迁移现有数据 (可选)
-```bash
-# 如果之前使用内置 memory-lancedb
-cd ~/.openclaw/plugins/memory-lancedb-pro
-
-# 运行迁移工具
-node dist/migrate.js \
-  --source ~/.openclaw/data/memory-lancedb \
-  --target ~/.openclaw/data/memory-lancedb-pro \
-  --verify
-```
-
-### 3.5 重启 Gateway
-```bash
-# 重启以加载新插件
 openclaw gateway restart
-
-# 检查日志
-tail -f ~/.openclaw/logs/gateway.log | grep memory-lancedb-pro
+openclaw plugins list
+openclaw plugins info memory-lancedb-pro
+openclaw plugins doctor
+openclaw config get plugins.slots.memory
 ```
 
-## 四、配置建议
+预期结果：
+- `memory-lancedb-pro` 被识别为已加载插件
+- `plugins.slots.memory` 指向 `memory-lancedb-pro`
+- 无 schema 校验错误
 
-### 4.1 打分参数调优
-**场景 1: 重视时效性 (日常对话)**
-```yaml
-memory-lancedb-pro:
-  scoring:
-    recencyBoost:
-      enabled: true
-      halfLifeDays: 7      # 7 天半衰期
-      weight: 0.3          # 30% 权重
-    timeDecay:
-      enabled: true
-      halfLifeDays: 30     # 30 天衰减
-```
+## 五、验收测试（按当前环境可执行）
 
-**场景 2: 重视准确性 (技术文档)**
-```yaml
-memory-lancedb-pro:
-  scoring:
-    recencyBoost:
-      enabled: false       # 禁用近期提升
-    importanceWeight: 0.5  # 提高重要性权重
-    hardMinScore: 0.5      # 提高最低分阈值
-```
-
-**场景 3: 平衡模式 (推荐)**
-```yaml
-memory-lancedb-pro:
-  scoring:
-    recencyBoost:
-      enabled: true
-      halfLifeDays: 14
-      weight: 0.2
-    importanceWeight: 0.3
-    lengthNormalization:
-      enabled: true
-      anchorLength: 200
-    mmrDiversity:
-      enabled: true
-      threshold: 0.85
-      penalty: 0.5
-    hardMinScore: 0.3
-```
-
-### 4.2 作用域配置
-**单 Agent 环境**:
-```yaml
-memory-lancedb-pro:
-  scopes:
-    default: [global, agent:claude]
-```
-
-**多 Agent 环境**:
-```yaml
-memory-lancedb-pro:
-  scopes:
-    # 每个 Agent 独立作用域
-    agent:claude:
-      access: [global, agent:claude, project:starchain]
-    agent:gemini:
-      access: [global, agent:gemini, project:starchain]
-    agent:main:
-      access: [global, agent:main, user:1099011886]
-```
-
-**项目隔离**:
-```yaml
-memory-lancedb-pro:
-  scopes:
-    project:starchain:
-      agents: [claude, gemini, main]
-      isolation: strict  # 严格隔离，不访问 global
-```
-
-### 4.3 性能优化
-**高并发场景**:
-```yaml
-memory-lancedb-pro:
-  retrieval:
-    topK: 5              # 减少召回数量
-    vectorWeight: 0.8    # 提高向量权重 (更快)
-    bm25Weight: 0.2      # 降低 BM25 权重
-  
-  reranker:
-    enabled: false       # 禁用 Rerank (节省延迟)
-  
-  adaptiveRetrieval:
-    minQueryLength: 20   # 提高触发阈值
-```
-
-**低资源环境**:
-```yaml
-memory-lancedb-pro:
-  embedding:
-    provider: ollama
-    model: nomic-embed-text  # 轻量级模型
-  
-  retrieval:
-    topK: 3
-  
-  autoCapture: false     # 禁用自动捕获
-  memoryReflection:
-    enabled: false       # 禁用内省
-```
-
-## 五、风险应对
-
-### 5.1 API 依赖与延迟
-**风险**: Rerank API 超时导致检索失败
-
-**应对方案**:
-1. **启用降级机制** (已内置):
-   ```typescript
-   // retriever.ts 自动降级到 cosine 排序
-   if (rerankerTimeout || rerankerError) {
-     fallbackToCosineRerank();
-   }
-   ```
-
-2. **配置超时保护**:
-   ```yaml
-   memory-lancedb-pro:
-     reranker:
-       timeout: 3000      # 3s 超时
-       retries: 1         # 重试 1 次
-       fallback: cosine   # 降级策略
-   ```
-
-3. **监控告警**:
-   ```yaml
-   memory-lancedb-pro:
-     monitoring:
-       rerankerFailureThreshold: 0.1  # 10% 失败率告警
-       notifyChannel: -5131273722     # 监控群
-   ```
-
-### 5.2 LanceDB BigInt 错误
-**风险**: LanceDB 0.26+ 版本 BigInt 类型转换错误
-
-**应对方案**:
-1. **确保插件版本 > 1.0.14**:
-   ```bash
-   cd ~/.openclaw/plugins/memory-lancedb-pro
-   git pull origin main
-   npm install
-   ```
-
-2. **手动修复 (如果需要)**:
-   ```typescript
-   // store.ts
-   const timestamp = Date.now();
-   const record = {
-     ...data,
-     timestamp: Number(timestamp),  // 强制转换为 Number
-     createdAt: Number(timestamp)
-   };
-   ```
-
-### 5.3 记忆污染
-**风险**: Auto-Capture 存入垃圾数据
-
-**应对方案**:
-1. **启用噪声过滤**:
-   ```yaml
-   memory-lancedb-pro:
-     noiseFilter:
-       enabled: true
-       patterns:
-         - "^I don't have"
-         - "^I cannot"
-         - "^HEARTBEAT"
-         - "^/[a-z]+"  # 过滤命令
-   ```
-
-2. **调整 Auto-Capture 阈值**:
-   ```yaml
-   memory-lancedb-pro:
-     autoCapture:
-       minImportance: 0.5     # 只捕获重要度 >= 0.5 的记忆
-       maxPerTurn: 2          # 每轮最多 2 条
-       categories: [preference, fact, decision]  # 限制类别
-   ```
-
-3. **定期清理**:
-   ```bash
-   # 删除低分记忆
-   openclaw memory-lancedb-pro clean --min-score 0.3 --dry-run
-   openclaw memory-lancedb-pro clean --min-score 0.3
-   
-   # 删除过期记忆
-   openclaw memory-lancedb-pro clean --older-than 90d
-   ```
-
-### 5.4 作用域泄露
-**风险**: 配置不当导致跨 Agent 记忆泄露
-
-**应对方案**:
-1. **默认隔离配置**:
-   ```yaml
-   memory-lancedb-pro:
-     scopes:
-       defaultAccess: [agent:self]  # 默认只访问自己的作用域
-       globalAccess: explicit       # global 需显式授权
-   ```
-
-2. **审计日志**:
-   ```yaml
-   memory-lancedb-pro:
-     audit:
-       enabled: true
-       logPath: ~/.openclaw/logs/memory-audit.log
-       logCrossScope: true  # 记录跨作用域访问
-   ```
-
-3. **定期检查**:
-   ```bash
-   # 检查作用域配置
-   openclaw memory-lancedb-pro scopes list
-   
-   # 检查跨作用域访问
-   grep "cross-scope" ~/.openclaw/logs/memory-audit.log
-   ```
-
-### 5.5 热更新缓存陷阱
-**风险**: 修改 .ts 文件后 jiti 缓存未清空
-
-**应对方案**:
-1. **强制清除缓存**:
-   ```bash
-   # 删除 jiti 缓存
-   rm -rf ~/.openclaw/cache/jiti
-   
-   # 重启 Gateway
-   openclaw gateway restart
-   ```
-
-2. **开发模式配置**:
-   ```yaml
-   # ~/.openclaw/config.yaml
-   plugins:
-     development:
-       clearCacheOnRestart: true
-       watchFiles: true
-   ```
-
-3. **AI Agents 铁律** (添加到 System Prompt):
-   ```markdown
-   ## AI Agents 铁律
-   
-   1. 修改 TypeScript 插件代码后，必须执行:
-      ```bash
-      rm -rf ~/.openclaw/cache/jiti
-      openclaw gateway restart
-      ```
-   
-   2. 验证修改生效:
-      ```bash
-      openclaw memory-lancedb-pro version
-      tail -f ~/.openclaw/logs/gateway.log | grep memory-lancedb-pro
-      ```
-   ```
-
-## 六、测试验证
-
-### 6.1 基础功能测试
+### 5.1 插件加载验收
 ```bash
-# 1. 检查插件加载
-openclaw gateway status | grep memory-lancedb-pro
-
-# 2. 存储测试
-openclaw memory-lancedb-pro store \
-  --text "晨星喜欢使用 Gemini 和 Ollama 进行本地部署" \
-  --scope agent:claude \
-  --importance 0.8
-
-# 3. 检索测试
-openclaw memory-lancedb-pro recall \
-  --query "晨星的部署偏好" \
-  --scope agent:claude \
-  --top-k 3
-
-# 4. 验证结果
-# 应返回刚才存储的记忆，且 score > 0.5
+openclaw plugins list
+openclaw plugins info memory-lancedb-pro
+openclaw logs | grep memory-lancedb-pro
 ```
 
-### 6.2 混合检索测试
+### 5.2 基础 embeddings 验收
 ```bash
-# 存储多条测试数据
-openclaw memory-lancedb-pro store --text "OpenClaw 是一个 AI Agent 框架"
-openclaw memory-lancedb-pro store --text "LanceDB 是向量数据库"
-openclaw memory-lancedb-pro store --text "Gemini 支持 Embedding API"
-
-# Vector 检索 (语义相似)
-openclaw memory-lancedb-pro recall --query "AI 框架" --vector-only
-
-# BM25 检索 (关键词匹配)
-openclaw memory-lancedb-pro recall --query "LanceDB" --bm25-only
-
-# 混合检索
-openclaw memory-lancedb-pro recall --query "向量数据库框架" --hybrid
+curl http://127.0.0.1:11434/v1/embeddings \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer ollama-local' \
+  --data '{"model":"nomic-embed-text","input":"memory test"}'
 ```
 
-### 6.3 作用域隔离测试
+### 5.3 最小功能验收
+如果插件 CLI / tools 已暴露出来，优先做三类验证：
+1. 存一条记忆
+2. 按 query 召回
+3. 检查 Markdown 镜像是否落盘
+
+**验收标准**：
+- 能成功写入 LanceDB
+- 能按语义 + 关键词回忆
+- 对应 agent workspace 下能看到镜像文件
+
+### 5.4 作用域隔离验收
+至少验证：
+- `agent:claude` 的私有记忆不会被 `agent:gemini` 直接读到
+- `global` 记忆可以被多个授权 agent 访问
+
+### 5.5 第一阶段不做的测试
+以下内容放到 P1 / P2：
+- Cross-encoder rerank
+- 大规模批量导入
+- memoryReflection 深度反射链
+- 自动捕获与自动召回并发验证
+
+## 六、风险与规避
+
+### 6.1 最大风险：把旧方案的 yaml 配置直接套到当前系统
+旧报告的问题不在项目本身，而在于把部署写成了另一套配置架构。
+
+**必须修正为**：
+- 配置文件：`openclaw.json`
+- 插件装载面：`plugins.load.paths` / `plugins.entries` / `plugins.slots`
+
+### 6.2 最大兼容性风险：embedding provider 写错
+旧稿把 embedding 写成原生 `gemini` / `ollama`。
+
+但当前项目 schema 明确要求：
+- `embedding.provider = "openai-compatible"`
+
+因此：
+- Ollama 路线要写 `baseURL = http://127.0.0.1:11434/v1`
+- 不要写成内置 `memorySearch` 那种 provider 形式
+
+### 6.3 当前环境最稳的路线
+结合本机已验证情况，最稳路线是：
+- Embedding：本地 Ollama
+- Model：`nomic-embed-text`
+- Rerank：先关
+- Session Strategy：`systemSessionMemory`
+- Auto-Capture / Auto-Recall：先关
+
+### 6.4 jiti 缓存风险
+如果后续修改插件 `.ts` 源码，必须执行：
 ```bash
-# 存储到不同作用域
-openclaw memory-lancedb-pro store \
-  --text "Claude 专用记忆" \
-  --scope agent:claude
-
-openclaw memory-lancedb-pro store \
-  --text "Gemini 专用记忆" \
-  --scope agent:gemini
-
-openclaw memory-lancedb-pro store \
-  --text "全局共享记忆" \
-  --scope global
-
-# 验证隔离
-openclaw memory-lancedb-pro recall \
-  --query "专用记忆" \
-  --scope agent:claude
-# 应只返回 Claude 和 global 的记忆，不包含 Gemini 的
-```
-
-### 6.4 自适应检索测试
-```bash
-# 应跳过检索的场景
-echo "hi" | openclaw agent --local --agent claude
-echo "/status" | openclaw agent --local --agent claude
-echo "👍" | openclaw agent --local --agent claude
-
-# 应触发检索的场景
-echo "你还记得我之前说的部署偏好吗？" | openclaw agent --local --agent claude
-echo "上次讨论的 LanceDB 配置是什么？" | openclaw agent --local --agent claude
-
-# 检查日志
-tail -f ~/.openclaw/logs/gateway.log | grep "adaptive-retrieval"
-# 应看到 "skipped" 和 "triggered" 日志
-```
-
-### 6.5 性能测试
-```bash
-# 批量存储测试
-for i in {1..100}; do
-  openclaw memory-lancedb-pro store \
-    --text "测试记忆 $i: $(date)" \
-    --scope agent:claude
-done
-
-# 检索性能测试
-time openclaw memory-lancedb-pro recall \
-  --query "测试记忆" \
-  --top-k 10
-
-# 预期: < 500ms (无 Rerank) / < 2s (有 Rerank)
-
-# 统计信息
-openclaw memory-lancedb-pro stats
-# 应显示: 总记忆数、作用域分布、平均检索时间
-```
-
-### 6.6 降级机制测试
-```bash
-# 模拟 Rerank API 失败
-# 方法 1: 配置错误的 API Key
-nano ~/.openclaw/config.yaml
-# reranker.apiKey: "invalid-key"
-
+rm -rf /tmp/jiti/
 openclaw gateway restart
-
-# 检索测试
-openclaw memory-lancedb-pro recall --query "测试" --top-k 5
-
-# 检查日志
-tail -f ~/.openclaw/logs/gateway.log | grep reranker
-# 应看到 "reranker failed, fallback to cosine" 日志
-
-# 方法 2: 禁用 Rerank
-nano ~/.openclaw/config.yaml
-# reranker.enabled: false
-
-openclaw gateway restart
-
-# 验证检索仍正常工作
-openclaw memory-lancedb-pro recall --query "测试" --top-k 5
 ```
 
-### 6.7 集成测试
-```bash
-# 完整对话流程测试
-openclaw agent --local --agent claude << 'EOF'
-你好，我是晨星。我喜欢使用 Gemini 和 Ollama 进行本地部署，不喜欢依赖外部 API。
-EOF
+否则 restart 之后仍可能加载旧缓存代码。
 
-# 等待 Auto-Capture 完成 (约 2-3s)
-sleep 3
+## 七、最终建议
 
-# 新对话测试 Auto-Recall
-openclaw agent --local --agent claude << 'EOF'
-你还记得我的部署偏好吗？
-EOF
+### 7.1 推荐结论
+**推荐部署路线：P0 本地 Ollama 最小可用版。**
 
-# 验证响应
-# 应包含 "Gemini"、"Ollama"、"本地部署" 等关键词
-# 且在 <relevant-memories> 标签中看到之前的记忆
-```
+原因：
+- 与当前机器已验证通过的 embeddings 能力一致
+- 无需再引入新的外部 key
+- 风险最低
+- 能最快判断插件是否值得继续接入现有长期记忆体系
 
-### 6.8 Markdown 镜像验证
-```bash
-# 检查 Markdown 文件生成
-ls -la ~/.openclaw/workspace/agents/claude/memory/
+### 7.2 不推荐的路线
+当前不推荐：
+- 第一阶段直接走 Gemini embeddings
+- 第一阶段直接开 rerank
+- 第一阶段直接开 autoCapture + autoRecall
+- 直接把 `intel/collaboration/` 里的分析目录当正式运行插件路径
 
-# 应看到 YYYY-MM-DD.md 文件
+### 7.3 上线顺序
+1. 提升运行副本到 `workspace/plugins/`
+2. `npm install`
+3. 在 `openclaw.json` 里追加插件配置
+4. `openclaw gateway restart`
+5. 做最小功能验收
+6. 验证稳定后再开 P1 / P2
 
-# 查看内容
-cat ~/.openclaw/workspace/agents/claude/memory/$(date +%Y-%m-%d).md
+## 八、结论
 
-# 应包含今天存储的所有记忆，格式如:
-# ## HH:MM:SS - [scope] [importance]
-# 记忆内容
-# ---
-```
+这份项目原始部署方案的方向没有问题，但落地层需要彻底切换到你现在机器的真实架构：
+- **不是** `config.yaml`
+- **而是** `openclaw.json`
+- **不是** 直接写原生 `gemini/ollama` provider
+- **而是** 插件 schema 要求的 `openai-compatible`
+- **不是** 让共享分析副本直接进运行态
+- **而是** `intel/collaboration/` 保留分析副本，`workspace/plugins/` 承载运行副本
 
-## 七、运维建议
+按当前环境，最可执行、最稳的最终落地方案是：
+- `memory-lancedb-pro` 以插件方式接入 OpenClaw
+- 本地 Ollama 提供 embeddings
+- 第一期只上最小可用能力
+- 当前已修好的内置 `memory_search` 先保持不动
 
-### 7.1 日常维护
-```bash
-# 每周执行
-openclaw memory-lancedb-pro stats
-openclaw memory-lancedb-pro clean --min-score 0.2 --dry-run
-
-# 每月执行
-openclaw memory-lancedb-pro export --output ~/backups/memory-$(date +%Y%m).jsonl
-openclaw memory-lancedb-pro clean --older-than 90d
-```
-
-### 7.2 监控指标
-```yaml
-# 添加到监控配置
-memory-lancedb-pro:
-  monitoring:
-    metrics:
-      - retrieval_latency_p95
-      - reranker_failure_rate
-      - auto_capture_rate
-      - scope_isolation_violations
-    alerting:
-      channels: [-5131273722]
-      thresholds:
-        retrieval_latency_p95: 2000  # ms
-        reranker_failure_rate: 0.1   # 10%
-```
-
-### 7.3 故障排查
-```bash
-# 检查插件状态
-openclaw gateway status | grep memory
-
-# 检查日志
-tail -f ~/.openclaw/logs/gateway.log | grep -E "memory|error"
-
-# 检查数据库
-ls -lh ~/.openclaw/data/memory-lancedb-pro/
-
-# 重建索引 (如果检索异常)
-openclaw memory-lancedb-pro reindex --verify
-
-# 验证配置
-openclaw memory-lancedb-pro config validate
-```
-
-## 八、总结
-
-### 8.1 部署清单
-- [x] 前置检查: Node.js, OpenClaw Gateway, Embedding 服务
-- [x] 安装插件: git clone + npm install
-- [x] 配置文件: ~/.openclaw/config.yaml
-- [x] 迁移数据: migrate.js (可选)
-- [x] 重启服务: openclaw gateway restart
-- [x] 功能测试: store + recall + 作用域隔离
-- [x] 性能测试: 批量存储 + 检索延迟
-- [x] 降级测试: Rerank 失败场景
-- [x] 集成测试: Auto-Capture + Auto-Recall
-
-### 8.2 关键配置
-**推荐配置 (Gemini + 本地 Ollama Rerank)**:
-```yaml
-plugins:
-  slots:
-    memory: memory-lancedb-pro
-
-memory-lancedb-pro:
-  embedding:
-    provider: gemini
-    model: text-embedding-004
-    apiKey: ${GEMINI_API_KEY}
-    dimensions: 768
-  
-  reranker:
-    provider: ollama
-    model: bge-reranker-v2-m3
-    baseURL: http://localhost:11434/v1
-  
-  retrieval:
-    topK: 10
-    vectorWeight: 0.7
-    bm25Weight: 0.3
-    minScore: 0.3
-  
-  scoring:
-    recencyBoost:
-      enabled: true
-      halfLifeDays: 14
-      weight: 0.2
-  
-  scopes:
-    defaultAccess: [global, agent:self]
-  
-  autoRecall: true
-  autoCapture: true
-  mdMirror:
-    enabled: true
-```
-
-### 8.3 风险缓解
-1. **API 依赖**: 使用 Ollama 本地 Rerank，配置降级机制
-2. **LanceDB 错误**: 确保插件版本 > 1.0.14
-3. **记忆污染**: 启用噪声过滤 + 调整 Auto-Capture 阈值
-4. **作用域泄露**: 默认隔离配置 + 审计日志
-5. **缓存陷阱**: 添加 AI Agents 铁律到 System Prompt
-
-### 8.4 后续优化
-1. **性能调优**: 根据实际使用情况调整 topK、权重、阈值
-2. **作用域策略**: 根据多 Agent 协作需求细化作用域配置
-3. **自进化**: 启用 memoryReflection，积累长期知识
-4. **监控告警**: 集成到现有监控系统 (监控告警群)
-
----
-
-**部署完成标志**:
-- Gateway 日志显示 "memory-lancedb-pro loaded successfully"
-- `openclaw memory-lancedb-pro stats` 返回正常统计信息
-- 集成测试中 Auto-Recall 能正确召回之前的记忆
-- Markdown 镜像文件正常生成
-
-**预计部署时间**: 30-60 分钟 (含测试验证)
+如果继续推进，下一步就不是再写报告了，而是进入：
+**按这份方案实际安装、改 `openclaw.json`、重启、做验收。**

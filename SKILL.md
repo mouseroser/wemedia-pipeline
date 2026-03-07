@@ -44,7 +44,8 @@ main（小光，编排中心）
 
 **Main Agent 工作目录**：
 - `~/.openclaw/workspace/` - Main agent (小光) 的工作目录
-- `workspace/intel/` - Agent 协作文件（单写者原则）
+- `workspace/intel/` - Agent 协作层（单写者原则）
+  - `collaboration/` - 多 agent 联合工作的非正式产物（外部项目、本地镜像、共享分析素材等）
 - `workspace/shared-context/` - 跨 agent 共享上下文
   - THESIS.md, FEEDBACK-LOG.md, SIGNALS.md
 - `workspace/memory/` - 记忆文件
@@ -64,6 +65,7 @@ main（小光，编排中心）
 **文件传递规则**：
 - 每个 agent 在自己的 workspace 目录中生成工作产物
 - 通过 `~/.openclaw/workspace/intel/` 目录传递摘要或索引（单写者原则）
+- 多 agent 联合工作的非正式产物（外部 GitHub 项目、本地镜像、共享分析素材等）统一放到 `intel/collaboration/`
 - Main agent 或其他 agent 直接读取对应 agent 的 workspace 目录获取完整产物
 
 ## Agent Roles

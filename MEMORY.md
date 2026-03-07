@@ -306,6 +306,7 @@
 - P1 验收结果（2026-03-07）：插件 CLI `memory-pro` 可用；`memory_store -> memory_recall -> memory_forget` 再次验证通过；删除后数据库记录会消失，但 markdown mirror 仍需手动清理
 - 历史记忆导入（2026-03-07）：已将 `MEMORY.md` 转成 JSON 并导入 `memory-lancedb-pro`，当前 `agent:main` 作用域已有 60 条历史记忆，CLI 检索可正常命中
 - 检索调优结论（2026-03-07）：大段 markdown 历史记忆适合归档与 CLI 检索；对聊天内高频问题（如“晨星是谁”“Telegram”“自动记录”“intel/collaboration 规则”），还应额外补充一层短句型原子记忆，这样 `memory_recall` 命中会明显更稳
+- 第二轮原子记忆补全（2026-03-07）：已补 main 编排边界、主私聊不承载长编排、可靠通知由 main 补发、Step 7 必须等晨星确认、中文沟通、内部安全事项默认直做、GitHub 先本地 clone、多 agent 协作材料放 `intel/collaboration/`、main 不越位代做其他智能体工作
 
 ## 踩坑笔记（续）
 

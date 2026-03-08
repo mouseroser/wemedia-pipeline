@@ -318,6 +318,7 @@
 - 踩坑（2026-03-08）：launchd plist 初版把 `uv` 写成 `/opt/homebrew/bin/uv` 导致 `EX_CONFIG`；本机实际路径是 `/Users/lucifinil_chen/.local/bin/uv`
 - 验收结果（2026-03-08）：真实 `memory_recall` 结果已出现 `vector+BM25+reranked`，sidecar 日志可见 `POST /v1/rerank`，说明 OpenClaw 已实际走本地 rerank 链路
 - P2.1 backend 解耦（2026-03-08）：sidecar 已升级为“固定接口 + 可插拔 backend”；当前生产默认仍是 `transformers`，同时已补 `ollama` backend 入口，支持 `generate` 与 `embeddings` 两种模式；已用 `nomic-embed-text` 在临时端口验证 `ollama + embeddings` 模式可用
+- P2.2 Ollama generate 验证（2026-03-08）：已新增一键切换脚本 `scripts/switch-local-rerank-backend.sh`；推荐中文实验模型为 `qwen2.5:7b`，现已通过 Ollama 拉取；实测 `ollama + generate + qwen2.5:7b` 可在固定 sidecar 接口上返回结构化 rerank 分数，验证通过后已将生产默认切回 `transformers`
 
 ## 踩坑笔记（续）
 

@@ -46,6 +46,13 @@ OpenClaw always talks to the same sidecar endpoint. Backends can change undernea
 - `scripts/status-local-rerank-sidecar.sh` - show manual process, launchd state, and health
 - `scripts/install-local-rerank-sidecar-launchd.sh` - install auto-start service via launchd
 - `scripts/uninstall-local-rerank-sidecar-launchd.sh` - remove launchd service
+- `scripts/switch-local-rerank-backend.sh` - switch launchd between `transformers`, `ollama-generate`, and `ollama-embeddings`
+
+## Recommended Ollama models for Chinese-heavy memory
+
+- `qwen2.5:7b` - recommended first model for `ollama-generate`; good Chinese ability and decent structured output
+- `qwen2.5:3b` - lighter/faster trial model if you want cheaper experimentation
+- `nomic-embed-text` - only for `ollama-embeddings`; useful as a fallback backend, but not a true cross-encoder reranker
 
 ## Notes
 

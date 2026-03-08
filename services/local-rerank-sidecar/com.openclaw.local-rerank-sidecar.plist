@@ -1,46 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-  <dict>
-    <key>Label</key>
-    <string>com.openclaw.local-rerank-sidecar</string>
-
-    <key>ProgramArguments</key>
-    <array>
-      <string>/Users/lucifinil_chen/.local/bin/uv</string>
-      <string>run</string>
-      <string>serve.py</string>
-    </array>
-
-    <key>WorkingDirectory</key>
-    <string>/Users/lucifinil_chen/.openclaw/workspace/services/local-rerank-sidecar</string>
-
-    <key>EnvironmentVariables</key>
-    <dict>
-      <key>LOCAL_RERANK_HOST</key>
-      <string>127.0.0.1</string>
-      <key>LOCAL_RERANK_PORT</key>
-      <string>8765</string>
-      <key>LOCAL_RERANK_BACKEND</key>
-      <string>transformers</string>
-      <key>LOCAL_RERANK_MODEL</key>
-      <string>BAAI/bge-reranker-v2-m3</string>
-      <key>LOCAL_RERANK_LOG_LEVEL</key>
-      <string>INFO</string>
-      <key>LOCAL_RERANK_OLLAMA_BASE_URL</key>
-      <string>http://127.0.0.1:11434</string>
-      <key>LOCAL_RERANK_OLLAMA_MODE</key>
-      <string>generate</string>
-    </dict>
-
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-
-    <key>StandardOutPath</key>
-    <string>/Users/lucifinil_chen/.openclaw/workspace/runtime/local-rerank-sidecar/launchd.log</string>
-    <key>StandardErrorPath</key>
-    <string>/Users/lucifinil_chen/.openclaw/workspace/runtime/local-rerank-sidecar/launchd.log</string>
-  </dict>
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>LOCAL_RERANK_BACKEND</key>
+		<string>transformers</string>
+		<key>LOCAL_RERANK_HOST</key>
+		<string>127.0.0.1</string>
+		<key>LOCAL_RERANK_LOG_LEVEL</key>
+		<string>INFO</string>
+		<key>LOCAL_RERANK_MODEL</key>
+		<string>BAAI/bge-reranker-v2-m3</string>
+		<key>LOCAL_RERANK_OLLAMA_BASE_URL</key>
+		<string>http://127.0.0.1:11434</string>
+		<key>LOCAL_RERANK_OLLAMA_MODE</key>
+		<string>generate</string>
+		<key>LOCAL_RERANK_PORT</key>
+		<string>8765</string>
+	</dict>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>com.openclaw.local-rerank-sidecar</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/lucifinil_chen/.local/bin/uv</string>
+		<string>run</string>
+		<string>serve.py</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/lucifinil_chen/.openclaw/workspace/runtime/local-rerank-sidecar/launchd.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/lucifinil_chen/.openclaw/workspace/runtime/local-rerank-sidecar/launchd.log</string>
+	<key>WorkingDirectory</key>
+	<string>/Users/lucifinil_chen/.openclaw/workspace/services/local-rerank-sidecar</string>
+</dict>
 </plist>

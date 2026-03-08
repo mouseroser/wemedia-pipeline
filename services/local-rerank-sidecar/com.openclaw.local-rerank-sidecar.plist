@@ -4,12 +4,18 @@
 <dict>
 	<key>EnvironmentVariables</key>
 	<dict>
+		<key>LOCAL_RERANK_BACKEND</key>
+		<string>transformers</string>
 		<key>LOCAL_RERANK_HOST</key>
 		<string>127.0.0.1</string>
 		<key>LOCAL_RERANK_LOG_LEVEL</key>
 		<string>INFO</string>
 		<key>LOCAL_RERANK_MODEL</key>
 		<string>BAAI/bge-reranker-v2-m3</string>
+		<key>LOCAL_RERANK_OLLAMA_BASE_URL</key>
+		<string>http://127.0.0.1:11434</string>
+		<key>LOCAL_RERANK_OLLAMA_MODE</key>
+		<string>generate</string>
 		<key>LOCAL_RERANK_PORT</key>
 		<string>8765</string>
 	</dict>

@@ -5,7 +5,13 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-from backends import RerankBackend, TransformersBackend, TransformersSettings
+from backends import (
+    OllamaBackend,
+    OllamaSettings,
+    RerankBackend,
+    TransformersBackend,
+    TransformersSettings,
+)
 from config import load_config
 
 
@@ -17,16 +23,34 @@ logging.basicConfig(
 logger = logging.getLogger("local-rerank-sidecar")
 
 
-BACKEND: RerankBackend = TransformersBackend(
-    TransformersSettings(
-        model_name=CONFIG.model_name,
-        max_length=CONFIG.max_length,
+def create_backend() -> RerankBackend:
+    if CONFIG.backend == "transformers":
+        return TransformersBackend(
+            TransformersSettings(
+                model_name=CONFIG.model_name,
+                max_length=CONFIG.max_length,
+            )
+        )
+    if CONFIG.backend == "ollama":
+        return OllamaBackend(
+            OllamaSettings(
+                model_name=CONFIG.model_name,
+                base_url=CONFIG.ollama_base_url,
+                timeout_seconds=CONFIG.ollama_timeout_seconds,
+                mode=CONFIG.ollama_mode,
+                keep_alive=CONFIG.ollama_keep_alive,
+            )
+        )
+    raise ValueError(
+        f"unsupported backend: {CONFIG.backend} (expected transformers or ollama)"
     )
-)
+
+
+BACKEND = create_backend()
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "LocalRerankSidecar/0.3"
+    server_version = "LocalRerankSidecar/0.2"
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
@@ -115,9 +139,10 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     logger.info(
-        "starting local rerank sidecar on %s:%s with model=%s",
+        "starting local rerank sidecar on %s:%s with backend=%s model=%s",
         CONFIG.host,
         CONFIG.port,
+        BACKEND.name,
         BACKEND.model_name,
     )
     server = ThreadingHTTPServer((CONFIG.host, CONFIG.port), Handler)

@@ -317,8 +317,8 @@
 - 自启动状态（2026-03-08）：已通过 `launchd` 安装 `com.openclaw.local-rerank-sidecar`，随登录自动拉起并保持存活；健康检查脚本为 `scripts/status-local-rerank-sidecar.sh`
 - 踩坑（2026-03-08）：launchd plist 初版把 `uv` 写成 `/opt/homebrew/bin/uv` 导致 `EX_CONFIG`；本机实际路径是 `/Users/lucifinil_chen/.local/bin/uv`
 - 验收结果（2026-03-08）：真实 `memory_recall` 结果已出现 `vector+BM25+reranked`，sidecar 日志可见 `POST /v1/rerank`，说明 OpenClaw 已实际走本地 rerank 链路
-- P2.1 backend 解耦（2026-03-08）：sidecar 曾短暂升级为“固定接口 + 可插拔 backend”并验证过 `ollama` 实验路径；但同日根据最新架构决策已移除 `Ollama rerank` 支持，重新收敛为单一生产链路：`transformers + BAAI/bge-reranker-v2-m3`
-- P2.2 Ollama generate 验证（2026-03-08）：已新增一键切换脚本 `scripts/switch-local-rerank-backend.sh`；推荐中文实验模型为 `qwen2.5:7b`，现已通过 Ollama 拉取；实测 `ollama + generate + qwen2.5:7b` 可在固定 sidecar 接口上返回结构化 rerank 分数，验证通过后已将生产默认切回 `transformers`
+- P2.1 backend 解耦（2026-03-08）：sidecar 当前采用“固定接口 + 可插拔 backend”架构；生产默认仍是 `transformers + BAAI/bge-reranker-v2-m3`，同时保留 `ollama` 作为可切换实验后端
+- P2.2 Ollama generate 验证（2026-03-08）：已新增一键切换脚本 `scripts/switch-local-rerank-backend.sh`；推荐中文实验模型为 `qwen2.5:7b`，现已通过 Ollama 拉取；实测 `ollama + generate + qwen2.5:7b` 可在固定 sidecar 接口上返回结构化 rerank 分数；当前生产默认仍切回 `transformers`
 
 ## 踩坑笔记（续）
 

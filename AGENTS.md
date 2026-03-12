@@ -8,17 +8,24 @@
 
 ## 职责
 
-### 星链流水线 v2.2
-作为顶层编排中心，负责：
+### 星链流水线 v2.8
+作为顶层编排中心，通过 isolated session 编排执行：
+- **用户体验**: 晨星说"用星链实现 XXX，L2" → Main 立即回复"收到！已启动" → 主私聊释放
+- **执行模式**: Spawn isolated session，在其中逐步编排所有 agent
 - **Step 1**: 需求分级（L1/L2/L3）+ 类型分析（Type A/B）
-- **Step 1.5**: Constitution-First 打磨层（gemini 问题宪法 → claude 实施计划 → review/gemini 复核 → review/gpt 仲裁）
-- **Step 2-7**: 串联所有步骤，直接 spawn 各 agent
-- **Step 3**: Type A 增加 review/gemini 快速复核，Type B 改用 review/gemini 算法分析
-- **Step 4**: 增加 review/gemini 预审（每轮修复后快速检查）
-- **Step 5.5**: 增强 Epoch 诊断与仲裁（gemini 诊断 → review/gemini 复核 → brainstorming 根因分析 → review/gpt 仲裁决策）
-- **Step 7**: 汇总交付 + 通知晨星
+- **Step 1.5**: Constitution-First 打磨层（NotebookLM 深度参与）
+  - 1.5A: gemini 扫描
+  - 1.5B: notebooklm 深度研究（提前介入，为宪法提供历史证据）
+  - 1.5C: openai 宪法（基于证据）
+  - 1.5D: claude 计划（基于最佳实践）
+  - 1.5E: gemini 一致性复核
+  - 1.5F: openai/claude 仲裁（按需）
+  - 1.5G: brainstorming 落地 Spec-Kit（动态模型）
+- **Step 2-7**: 串联所有步骤，通过 sessions_spawn(mode="run") 编排各 agent
+- **完成通知**: 通过 announce 机制通知晨星
 - **全程**: 补发关键推送（sub-agent 推送不可靠）
-- **优化收益**: 降本 25-35%，效率提升 30-40%，Epoch 成功率提升 15-20%
+- **优化收益**: 降本 35-45%，效率提升 30-40%，Epoch 成功率提升 15-20%
+- **v2.8 核心改进**: NotebookLM 提前介入 + 证据驱动规则 + Brainstorming 动态模型 + Main 编排 isolated session
 
 ### 自媒体流水线 v1.1
 作为顶层编排中心，负责：
@@ -27,23 +34,24 @@
 - **Step 3-7**: 串联创作、审查、生图、适配、交付
 - **Step 7**: 晨星确认门控
 
-### 星鉴流水线 v1.2
-作为顶层编排中心，负责：
+### 星鉴流水线 v2.0
+作为顶层编排中心，通过 isolated session 编排执行：
+- **用户体验**: 晨星说"用星鉴评估 XXX，D 级" → Main 立即回复"收到！已启动" → 主私聊释放
+- **执行模式**: Spawn isolated session，在其中逐步编排所有 agent
 - **Step 1**: 报告任务分级（Q/S/D）+ 类型分析
-- **Step 2**: gemini 研究宪法（问题定义 / 边界 / 风险）
-  - Q 级: gemini/medium
-  - S/D 级: gemini/high
-- **Step 3**: claude 主方案（基于宪法出落地报告）
-  - Q/S 级: claude/opus/medium
-  - D 级: claude/opus/high
-- **Step 4**: review/gemini 一致性复核
+- **Step 1.5**: gemini 快速扫描（问题清单、盲点清单、待验证假设）
+- **Step 2A**: openai 宪法简报（1-2 页核心约束）
+- **Step 2B**: notebooklm 深度研究（宪法作为首个 source，项目级研究操作系统）
+- **Step 3**: claude 复核优化（文字、结构、论证、找漏洞）
+- **Step 4**: gemini 一致性检查（S/D 级）
   - 输出: ALIGN / DRIFT / MAJOR_DRIFT
-  - review/gemini/medium
-- **Step 5**: review/gpt 按需仲裁（高风险场景）
+- **Step 5**: openai/claude 按需仲裁（高风险场景）
   - 触发条件: MAJOR_DRIFT / D 级任务 / 强分歧
-  - review/gpt/high
   - 输出: GO / REVISE / BLOCK
 - **Step 6**: docs 交付定稿
+- **Step 7**: announce 通知晨星确认
+- **核心优势**: 轻量宪法 + NotebookLM 主研究双引擎，规则驱动 + 资料驱动
+- **优化收益**: 研究深度提升 50-60%，方案完整性提升 40-50%，D 级质量提升 50-60%
   - docs/minimax/medium
 - **Step 7**: main 统一交付
   - main/opus/high

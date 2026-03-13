@@ -262,6 +262,10 @@ L 级流程：Step 1 → Step 2（含 NotebookLM）→ Step 3 → Step 4 → Ste
 
 ## 推送规范
 
+- **默认原则：main 的通知是可靠主链路；agent 自推仅为 best-effort 辅链路。**
+- 自媒体流程中，各子 agent 可以尝试向自己的职能群发送开始 / 关键进度 / 完成 / 失败，但不能把其成功投递视为可靠前提。
+- `sessions_spawn(mode=run)` 下，subagent completion/announce 与 `message(...)` 是独立链路；subagent 可成功完成并回传 announce，但它自己的 Telegram `message(...)` 仍可能不投递。因此所有关键进度、结果、失败与告警必须由 `main` 统一保证可见性。
+
 main 在以下节点推送到自媒体群(-5146160953)：
 - Step 1 选题单
 - Step 2 调研结果（含 NotebookLM 知识）

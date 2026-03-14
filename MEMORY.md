@@ -95,6 +95,7 @@
 
 - **Layer 1**：MEMORY.md + memory/*.md（文件）
 - **Layer 2**：memory-lancedb-pro@1.1.0-beta.8 + Ollama nomic-embed-text + 本地 rerank(bge-reranker-v2-m3:8765)
+  - autoRecall=true, autoCapture=true, captureAssistant=true
 - **Layer 3**：NotebookLM（memory-archive + openclaw-docs + troubleshooting）
 - **维护**：每日日志加载今天+昨天，压缩阈值 40k tokens，周日 04:00 压缩 + 22:00 MEMORY.md 维护
 

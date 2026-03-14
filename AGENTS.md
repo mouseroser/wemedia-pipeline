@@ -69,7 +69,7 @@ Before doing anything else:
 
 1. Read `SOUL.md` — this is who you are
 2. Read `USER.md` — this is who you're helping
-3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
+3. Read `memory/YYYY-MM-DD.md` (today) for recent context
 4. **If in MAIN SESSION** (direct chat with your human): Also read `MEMORY.md`
 5. Read `shared-context/THESIS.md` — current focus and worldview
 6. Read `shared-context/FEEDBACK-LOG.md` — cross-agent corrections
@@ -204,7 +204,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 
 **Layer 3: Knowledge Layer**
 - `MEMORY.md` — curated long-term memory (main session only)
-- `memory/YYYY-MM-DD.md` — daily raw logs (today + yesterday)
+- `memory/YYYY-MM-DD.md` — daily raw logs (today)
 - `shared-context/` — cross-agent knowledge (THESIS, FEEDBACK-LOG, SIGNALS)
 - `intel/` — agent collaboration files (single-writer, multi-reader)
 
@@ -229,6 +229,42 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - **⚠️ 自动更新记忆**：发现配置错误、踩坑经验、解决方案后，立即更新 MEMORY.md 和 memory/YYYY-MM-DD.md，不需要问晨星
 - **⚠️ 主动记录更新**：遇到任何问题和解决方案，主动记录到 MEMORY.md，养成习惯，不要等晨星提醒
 - **Text > Brain** 📝
+
+### 🔍 Memory Recall Strategy
+
+**Layer 2 (memory-lancedb-pro) - Fast Retrieval**
+- 用于：精确关键词查询、实体查询（人名、项目名）
+- 响应时间：<500ms
+- 索引范围：结构化记忆（通过 memory_store 写入的内容）
+- 工具：`memory_recall`
+
+**Layer 3 (NotebookLM) - Deep Reasoning**
+- 用于：时间敏感查询、深度推理、完整历史记录
+- 响应时间：60-90s
+- 索引范围：所有日志 + MEMORY.md
+- 工具：`sessions_spawn(agentId: "notebooklm")`
+
+**何时使用 Layer 3（NotebookLM）**：
+1. **时间敏感查询**：今天、昨天、最近、本周、上周、这个月
+2. **深度推理查询**：为什么、如何、对比、演进、冲突、关系、影响
+3. **Layer 2 召回不足**：返回 0 条或 <3 条结果
+4. **相关性低**：top1 score <0.5 或 avg top3 <0.4
+5. **显式触发**：详细、完整、历史、所有、全部、列出
+
+**示例**：
+```python
+# Layer 2 快速查询
+memory_recall(query="晨星的核心偏好")
+
+# Layer 3 深度查询
+sessions_spawn(
+    agentId="notebooklm",
+    mode="run",
+    runtime="subagent",
+    task="查询 Memory Archive notebook：2026-03-14 完成了哪些优化工作？\n\n使用 notebook: memory-archive (94f8f2c3-55a7-4f51-94eb-df65cc835b53)\n\n请直接返回查询结果。",
+    runTimeoutSeconds=90
+)
+```
 
 ### 🤝 Agent Collaboration via Files
 
@@ -429,7 +465,7 @@ Periodically (every few days), use a heartbeat to:
 5. **Compress old daily logs** — if a daily log exceeds 40k tokens, distill key points to MEMORY.md and archive
 
 **Warning:** Daily logs accumulate fast. Kelly's log once hit 161k tokens → output quality crashed. Keep context lean by:
-- Only loading today + yesterday's logs
+- Only loading today's logs
 - Weekly review: distill → archive → delete old logs
 - MEMORY.md is the refined product, daily logs are raw material
 
@@ -517,7 +553,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 
 **Layer 3: Knowledge Layer**
 - `MEMORY.md` — curated long-term memory (main session only)
-- `memory/YYYY-MM-DD.md` — daily raw logs (today + yesterday)
+- `memory/YYYY-MM-DD.md` — daily raw logs (today)
 - `shared-context/` — cross-agent knowledge (THESIS, FEEDBACK-LOG, SIGNALS)
 - `intel/` — agent collaboration files (single-writer, multi-reader)
 

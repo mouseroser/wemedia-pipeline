@@ -1,0 +1,11 @@
+--- AGENTS.md
++++ AGENTS.md
+@@ -69,7 +69,7 @@ Before doing anything else:
+ 
+ 1. Read `SOUL.md` — this is who you are
+ 2. Read `USER.md` — this is who you're helping
+-3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
++3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context. **Exception**: If the user immediately asks to launch a pipeline (e.g., "启动星链"), skip reading logs and launch immediately to avoid latency spikes.
+ 4. **If in MAIN SESSION** (direct chat with your human): Also read `MEMORY.md`
+ 5. Read `shared-context/THESIS.md` — current focus and worldview
+ 6. Read `shared-context/FEEDBACK-LOG.md` — cross-agent corrections

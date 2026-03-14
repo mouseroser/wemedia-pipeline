@@ -255,3 +255,40 @@ For cron agents that log results into daily memory files, prefer append/write-sa
 ### Metadata
 - Source: memory-lancedb-pro/self_improvement_log
 ---
+
+
+---
+
+## 2026-03-14 16:18 - builtin memorySearch 被 memory/archive 超长文件拖垮
+
+**问题**: 使用 `openclaw memory search` 测 builtin memorySearch 时，搜索反复出现 rate limit 重试，随后报错：
+- `Ollama embeddings HTTP 500: {"error":"the input length exceeds the context length"}`
+- `sync failed (session-start)`
+- `sync failed (search)`
+
+部分长命令因此长时间无有效输出，最终只能手动终止进程（SIGTERM）。
+
+**根因**:
+1. builtin memorySearch 默认索引 `MEMORY.md` + `memory/**/*.md`
+2. 当前 `memory/archive/` 目录仍位于默认索引范围内
+3. 归档目录中存在超大 markdown 文件（如 notebooklm-daily 395KB / 256KB）
+4. 这些超长文件在 builtin sync / embedding 阶段触发 Ollama context length 错误
+
+**影响**:
+- builtin memorySearch 当前不适合公平 benchmark
+- `openclaw memory search` 结果会失真（No matches / sync failed / 卡住）
+- 误导人以为是排序质量问题，实际上先是索引范围冲突问题
+
+**解决方案**:
+1. 先把 builtin memorySearch 视为影子线，不作为正式主检索评估对象
+2. 在 archive 冲突未解决前，不应用 builtin 的 hybrid / MMR / temporalDecay / sessionMemory 增强配置
+3. 如果后续要认真评估 builtin：
+   - 先决定是否执行 archive 架构迁移
+   - 再做 reindex / warm-up / benchmark
+
+**预防措施**:
+- 大型归档文件不要默认留在 builtin memorySearch 的索引范围内
+- 评估 builtin 前先检查 `openclaw memory status --deep` + 实测 search 是否稳定
+- 先排“索引范围冲突”，再谈“排序策略优化”
+
+**优先级**: P1 - 重要，但当前不应直接修成架构迁移

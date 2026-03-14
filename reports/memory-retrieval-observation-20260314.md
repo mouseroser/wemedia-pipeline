@@ -34,6 +34,7 @@
 2. 暂不迁移 archive 目录
 3. 先把 builtin memorySearch 视为**暂缓评估的影子线**
 4. 主链路继续依赖 `memory-lancedb-pro`
+5. 重新评估 builtin 前，必须先满足前置条件清单（见 `reports/builtin-memorysearch-prerequisites-20260314.md`）
 
 ### 明日关注点
 - 如果继续观察，优先记录：

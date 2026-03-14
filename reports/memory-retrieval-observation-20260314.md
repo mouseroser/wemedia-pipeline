@@ -44,23 +44,28 @@
 
 ---
 
+## 后续填写方式
+- 每天先用：`reports/memory-retrieval-scorecard-template-20260314.md`
+- 填完后，把当日摘要回写到本观察日志对应日期小节
+- 这样主日志保持简洁，详细评分单独留档
+
 ## Day 2 — 2026-03-15
-- 待记录
+- 待记录（使用 scorecard template）
 
 ## Day 3 — 2026-03-16
-- 待记录
+- 待记录（使用 scorecard template）
 
 ## Day 4 — 2026-03-17
-- 待记录
+- 待记录（使用 scorecard template）
 
 ## Day 5 — 2026-03-18
-- 待记录
+- 待记录（使用 scorecard template）
 
 ## Day 6 — 2026-03-19
-- 待记录
+- 待记录（使用 scorecard template）
 
 ## Day 7 — 2026-03-20
-- 待记录
+- 待记录（使用 scorecard template）
 
 ---
 

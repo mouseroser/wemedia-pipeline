@@ -193,3 +193,34 @@ For `CortexReach/memory-lancedb-pro`, default to Chinese in issue/PR/comment/com
 - Tags: github, upstream, language, correction, context-sensitive
 
 ---
+## [LRN-20260315-001] best_practice
+
+**Logged**: 2026-03-15T00:51:00+08:00
+**Priority**: high
+**Status**: promoted
+**Area**: config
+
+### Summary
+Runtime-loaded plugins must use a dedicated runtime worktree; PR branches must never share the live plugin load path.
+
+### Details
+OpenClaw was loading `memory-lancedb-pro` directly from `~/.openclaw/workspace/plugins/memory-lancedb-pro`. During PR work, switching that repository between `feat/layer3-notebooklm-fallback` and `fix/skip-claude-review-on-fork-prs` changed the live runtime plugin code. After upgrading OpenClaw to v2026.3.13, the active runtime no longer saw the `layer3Fallback` schema and the config block was stripped from `~/.openclaw/openclaw.json`.
+
+The hardened pattern is:
+- runtime loads only from `/Users/lucifinil_chen/.openclaw/runtime-plugins/memory-lancedb-pro`
+- PR branches use separate worktrees
+- heartbeat verifies both `plugins.load.paths` and `plugins.entries["memory-lancedb-pro"].config.layer3Fallback` after upgrades
+
+### Suggested Action
+Keep runtime and PR worktrees permanently separated. Treat version changes as a trigger to verify and, if needed, restore the protected Layer 3 config block plus gateway restart.
+
+### Metadata
+- Source: simplify-and-harden
+- Related Files: HEARTBEAT.md, ~/.openclaw/openclaw.json, ~/.openclaw/state/layer3-fallback-guard.json
+- Tags: openclaw, plugin-runtime, worktree, upgrade-guard, layer3Fallback
+- Pattern-Key: harden.runtime-plugin-worktree-isolation
+- Recurrence-Count: 1
+- First-Seen: 2026-03-15
+- Last-Seen: 2026-03-15
+
+---

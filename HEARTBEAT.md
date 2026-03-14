@@ -38,6 +38,26 @@ openclaw cron list
 openclaw cron trigger <task-id>
 ```
 
+### OpenClaw 升级 / Layer 3 守护
+维护状态文件：`~/.openclaw/state/layer3-fallback-guard.json`
+
+每次心跳时额外检查：
+1. 当前 OpenClaw 版本是否发生变化（相对 state 文件中的 `lastKnownOpenClawVersion`）
+2. `plugins.load.paths` 是否仍指向 runtime 专用路径：
+   - `/Users/lucifinil_chen/.openclaw/runtime-plugins/memory-lancedb-pro`
+3. `plugins.entries["memory-lancedb-pro"].config.layer3Fallback` 是否仍存在且启用
+
+如果任一项异常：
+- 立即把 runtime 加载路径恢复到专用 runtime worktree
+- 立即恢复 `layer3Fallback` 配置块（`enabled:true`, `agent:notebooklm`, `notebook:memory-archive`, `timeout:45` + triggers）
+- 立即触发 gateway 重启重新加载
+- 更新 state 文件中的版本与检查时间
+- 仅在发生修复或需要晨星介入时才提醒；否则保持安静
+
+硬规则：
+- **绝不要**再把 runtime plugin load path 指回 `~/.openclaw/workspace/plugins/memory-lancedb-pro` 这种 PR/开发树
+- PR 分支只能在独立 worktree 里切换，不能影响运行中的插件目录
+
 ### 记忆维护
 每周一次（周日晚上）：
 1. 回顾本周 `memory/YYYY-MM-DD.md` 文件

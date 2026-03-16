@@ -54,7 +54,7 @@
 - **状态**：P1（autoRecall=true, autoCapture=true）
 
 ### Layer 3: Memory Archive (NotebookLM)（顶层 - 深度理解）
-- **Notebook ID**：bb3121a4-5e95-4d32-8d9a-a85cf1e3
+- **Notebook ID**：94f8f2c3-55a7-4f51-94eb-df65cc835b53
 - **用途**：深度理解、长期归档、跨会话分析
 - **特点**：AI 辅助理解，生成摘要和洞察
 

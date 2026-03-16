@@ -419,3 +419,52 @@ For cron agents that log results into daily memory files, prefer append/write-sa
 3. 如需批量迁移，优先找插件官方 import/upgrade 路径，而不是直接写表
 
 **优先级**: P1 - 重要，后续恢复/迁移场景高概率复现
+
+## [ERR-20260317-001] layer3-fallback-notebooklm-session-lock
+
+**Logged**: 2026-03-17T00:00:00Z
+**Priority**: high
+**Status**: fixed
+**Area**: memory
+
+### Summary
+`memory_recall` 的 Layer 3 fallback 在 2026-03-17 的 Day 3 benchmark 中连续 3 次出现 `notebooklm session file locked + gateway timeout`，导致本应作为补充的 NotebookLM 深查链路失效。
+
+### Error
+```text
+Layer 3 fallback failed 3 times with notebooklm session file locked + gateway timeout
+lock path: ~/.openclaw/agents/notebooklm/sessions/...jsonl.lock
+```
+
+### Context
+- Command/operation attempted: `memory_recall` 自动触发 Layer 3 fallback
+- Environment: OpenClaw runtime plugin `memory-lancedb-pro`
+- Observed behavior:
+  - Layer 2 正常返回
+  - Layer 3 在 5/15 次 benchmark 查询中被动触发
+  - 其中 3 次显式失败，错误集中在 NotebookLM agent session lock + timeout
+- Related Files:
+  - `~/.openclaw/runtime-plugins/memory-lancedb-pro/src/tools.ts`
+  - `~/.openclaw/runtime-plugins/memory-lancedb-pro/test/layer3-fallback.test.mjs`
+
+### Root Cause
+`runNotebookLMFallbackQuery()` 通过 `openclaw agent --agent notebooklm ...` 拉起 Layer 3 查询，但**没有显式传 `--session-id`**。结果多次 fallback 会复用同一个持久 NotebookLM session 文件，碰到已有锁时就卡在 `.../sessions/*.jsonl.lock`，随后演化成 timeout / retry 失败。
+
+### Fix
+1. 在 `src/tools.ts` 增加最小 helper，为每次 Layer 3 fallback 生成**唯一 session id**。
+2. `openclaw agent` 调用现在显式带 `--session-id memory-layer3-fallback-*`，避免和持久 NotebookLM session 争锁。
+3. 增加回归测试，验证每次 fallback 命令都有 `--session-id`，且不同调用得到不同 id。
+4. 修复后按既有规则清 `rm -rf /tmp/jiti` 并重启 gateway 让运行态吃到新代码。
+
+### Validation
+- `node --test test/layer3-fallback.test.mjs` ✅
+- `npm run typecheck` ✅
+- `npm run build` ✅
+- 重启后做真实 `memory_recall` 冒烟，Layer 3 不再报 session lock ✅
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/runtime-plugins/memory-lancedb-pro/src/tools.ts, ~/.openclaw/runtime-plugins/memory-lancedb-pro/test/layer3-fallback.test.mjs
+- Fix Commit: `567a59c561494e91e92f60da890839fe027d5be9`
+
+---

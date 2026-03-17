@@ -334,3 +334,28 @@ When parsing piped JSON with Python, use one of these instead:
 - Tags: shell, stdin, pipe, heredoc, parsing
 
 ---
+
+## [LRN-20260317-004] best_practice
+
+**Logged**: 2026-03-17T15:02:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: workflow
+
+### Summary
+Files under `~/.openclaw/todo/` are outside the workspace git repository: they can be edited directly, but cannot be committed with `git -C ~/.openclaw/workspace`.
+
+### Details
+I updated `~/.openclaw/todo/master-execution-plan.md` and then tried to commit it from the workspace repo. Git correctly failed because the file lives outside `/Users/lucifinil_chen/.openclaw/workspace` and `~/.openclaw` itself is not a git repository. This is a recurring boundary issue between “global OpenClaw config/task files” and “workspace-tracked files”.
+
+### Suggested Action
+Before committing, check whether the edited path is inside the current repository root. For `~/.openclaw/todo/`, `~/.openclaw/scripts/`, or other global paths outside `workspace/`, either:
+1. leave them as direct filesystem edits without git commit, or
+2. mirror the change into a workspace-tracked report/log if a commit trail is needed.
+
+### Metadata
+- Source: error
+- Related Files: ~/.openclaw/todo/master-execution-plan.md, .learnings/LEARNINGS.md
+- Tags: git, workspace-boundary, todo, repo-scope
+
+---

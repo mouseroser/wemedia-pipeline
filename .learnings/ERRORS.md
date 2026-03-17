@@ -467,7 +467,11 @@ lock path: ~/.openclaw/agents/notebooklm/sessions/...jsonl.lock
   - `本周记忆系统有哪些重要变化？请详细说明` ✅
   - `为什么之前会出现 memory-lancedb-pro beta.8 回归？` 第一次偶发 `SIGTERM (timeout 45000ms)`，手工 `nlm-gateway` 同题仅 22.97s，随后二次 `memory_recall` 复测成功 ✅
   - `昨天的工作总结详细历史` ✅
-- 结论：`session file locked` 已不再复现；剩余风险是 **45s timeout 偶发偏紧**，不是旧的 gateway lane 锁争用。
+- 结论：`session file locked` 已不再复现；剩余风险一度变成 **45s timeout 偶发偏紧**，不是旧的 gateway lane 锁争用。
+- 2026-03-17 10:43 已将 `plugins.entries.memory-lancedb-pro.config.layer3Fallback.timeout` 从 `45` 调高到 `75`，并完成真实验证：
+  - `nlm-gateway.sh query --no-cache` 新重 query 实测 `46.607s`（旧配置会越界）
+  - 同题 `memory_recall` 在新配置下成功返回 Layer 3 ✅
+- 当前结论：这条故障链已从“session lock + 45s timeout”收口为**已修复并通过边界查询验证**。
 
 ### Metadata
 - Reproducible: yes

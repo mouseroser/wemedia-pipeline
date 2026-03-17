@@ -285,3 +285,26 @@ NotebookLM / OpenClaw docs / notebook 行为排查时，必须先按既有记忆
 - Last-Seen: 2026-03-17
 
 ---
+
+## [LRN-20260317-002] correction
+
+**Logged**: 2026-03-17T14:45:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: workflow
+
+### Summary
+When I promise a titled deliverable in-chat, “continue” means I should actually produce that deliverable, not just continue adjacent execution work.
+
+### Details
+I told the user I would provide a specific follow-up artifact: 《Layer 3 后续优化路线图（本地版 / 上游版双轨）》. Later, when the user said “继续”, I continued related execution items (cron scheduling / status follow-up), but did not actually write the promised roadmap. The user had to correct me explicitly. The failure was not lack of knowledge; it was losing track of the concrete promised output.
+
+### Suggested Action
+When I explicitly promise a named artifact (roadmap, checklist, report, draft, summary), treat that artifact as an open obligation. On the next “继续” or similar prompt, first check whether the promised artifact has already been delivered. If not, deliver it before doing adjacent work.
+
+### Metadata
+- Source: user_feedback
+- Related Files: reports/layer3-dual-track-roadmap-20260317.md
+- Tags: follow-through, promised-deliverable, correction, workflow
+
+---

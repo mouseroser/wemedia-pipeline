@@ -448,19 +448,26 @@ lock path: ~/.openclaw/agents/notebooklm/sessions/...jsonl.lock
   - `~/.openclaw/runtime-plugins/memory-lancedb-pro/test/layer3-fallback.test.mjs`
 
 ### Root Cause
-`runNotebookLMFallbackQuery()` 通过 `openclaw agent --agent notebooklm ...` 拉起 Layer 3 查询，但**没有显式传 `--session-id`**。结果多次 fallback 会复用同一个持久 NotebookLM session 文件，碰到已有锁时就卡在 `.../sessions/*.jsonl.lock`，随后演化成 timeout / retry 失败。
+最初判断成“缺少 `--session-id`”只对了一半，**真正根因是 `openclaw agent --agent notebooklm` 会按 agent lane 固定路由到 `session:agent:notebooklm:main`**。也就是说，即使显式传了唯一 `--session-id`，也只会改变 transcript id，**不会改变 gateway 的 lane / sessionKey**；请求仍可能撞上同一把 NotebookLM session 文件锁。
 
 ### Fix
-1. 在 `src/tools.ts` 增加最小 helper，为每次 Layer 3 fallback 生成**唯一 session id**。
-2. `openclaw agent` 调用现在显式带 `--session-id memory-layer3-fallback-*`，避免和持久 NotebookLM session 争锁。
-3. 增加回归测试，验证每次 fallback 命令都有 `--session-id`，且不同调用得到不同 id。
-4. 修复后按既有规则清 `rm -rf /tmp/jiti` 并重启 gateway 让运行态吃到新代码。
+1. 放弃继续在 `openclaw agent --agent notebooklm` 这条路上打补丁。
+2. 将 `src/tools.ts` 的 Layer 3 fallback 改为**直接调用** `~/.openclaw/skills/notebooklm/scripts/nlm-gateway.sh query --agent notebooklm --notebook memory-archive --query ...`，彻底绕开 gateway lane。
+3. 同步更新回归测试：不再断言 `--session-id`，改为断言 fallback 命令直接落到 `nlm-gateway.sh query`。
+4. 复测时又发现当前配置里的 `layer3Fallback.timeout` 实际是 `45` 秒；新链路虽然打通，但偶发会被 `SIGTERM (timeout 45000ms)` 提前砍掉。于是继续修复代码，让直连 `nlm-gateway` 的路径**尊重配置 timeout**，不再套用旧 `openclaw agent` 路径遗留的 50s cap，并把 `code null` 改成携带 signal/timeout 的明确错误信息。
+5. 每次代码变更后都按既有规则清 `rm -rf /tmp/jiti` 并完整 `openclaw gateway restart`，确保 live runtime 真正吃到新代码。
 
 ### Validation
+- runtime worktree commits：
+  - `36d6c4a` — `fix: use nlm-gateway.sh for layer3 fallback to avoid gateway lane lock`
+  - `687420d` — `fix: honor configured timeout for nlm gateway layer3 fallback`
 - `node --test test/layer3-fallback.test.mjs` ✅
-- `npm run typecheck` ✅
-- `npm run build` ✅
-- 重启后做真实 `memory_recall` 冒烟，Layer 3 不再报 session lock ✅
+- 真实 `memory_recall` 复测：
+  - `当前 Layer 2 和 Layer 3 的策略对比，完整一点` ✅
+  - `本周记忆系统有哪些重要变化？请详细说明` ✅
+  - `为什么之前会出现 memory-lancedb-pro beta.8 回归？` 第一次偶发 `SIGTERM (timeout 45000ms)`，手工 `nlm-gateway` 同题仅 22.97s，随后二次 `memory_recall` 复测成功 ✅
+  - `昨天的工作总结详细历史` ✅
+- 结论：`session file locked` 已不再复现；剩余风险是 **45s timeout 偶发偏紧**，不是旧的 gateway lane 锁争用。
 
 ### Metadata
 - Reproducible: yes

@@ -479,3 +479,36 @@ lock path: ~/.openclaw/agents/notebooklm/sessions/...jsonl.lock
 - Fix Commit: `567a59c561494e91e92f60da890839fe027d5be9`
 
 ---
+
+## [ERR-20260317-002] read-offset-beyond-eof
+
+**Logged**: 2026-03-17T06:22:00Z
+**Priority**: low
+**Status**: pending
+**Area**: docs
+
+### Summary
+在继续读取 `memory/2026-03-17.md` 时，给了超出文件总行数的 offset，触发 `read` 工具错误：`Offset 120 is beyond end of file (66 lines total)`。
+
+### Error
+```text
+Offset 120 is beyond end of file (66 lines total)
+```
+
+### Context
+- Command/operation attempted: 对 `memory/2026-03-17.md` 做分段续读
+- Input used: `offset=120`
+- Actual file size at the time: `66` lines
+- Root pattern: 先按经验猜测后续 offset，而不是先基于上一段输出或当前文件长度确认续读位置。
+
+### Suggested Fix
+1. 对短文件续读前，先看上一段 `read` 的实际结束位置，或先确认当前文件总行数。
+2. 当文件行数明显较短时，优先从较小 offset 继续读，而不是预设一个大 offset。
+3. 如果只是想验证 append 是否成功，直接从文件尾附近读（例如最近 20-40 行），不要盲目跳到远超文件长度的位置。
+
+### Metadata
+- Reproducible: yes
+- Related Files: `memory/2026-03-17.md`
+- See Also: `ERR-20260311-001`, `ERR-20260313-001`
+
+---

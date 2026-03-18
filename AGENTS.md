@@ -38,11 +38,16 @@ Don't ask permission. Just do it.
 - **Step 2-7**: 串联所有步骤，通过 sessions_spawn(mode="run") 编排各 agent
 - **Step 7**: announce 通知晨星确认
 
-### 自媒体流水线 v1.1
-- **S 级**：Step 1 → 3 → 4 → 6 → 7（5-10分钟）
-- **M 级**：Step 1 → 2（Gemini → Claude → Gemini）→ 3 → 4 → 6 → 7（15-25分钟）
-- **L 级**：Step 1 → 2（+ GPT 仲裁）→ 3 → 4 → 5.5（notebooklm）→ 6 → 7（25-40分钟）
+### 自媒体流水线 v1.1 / 运营系统 v1.1
+- **Step 0（新增）**：持续研究层（gemini 早/午/晚扫描，写 `intel/media-ops/DAILY-SIGNAL-BRIEF.md` 与 `HOT-SCAN-INBOX.md`）
+- **Step 1（新增）**：内容队列层（main 维护 `HOT-QUEUE.md` / `EVERGREEN-QUEUE.md` / `SERIES-QUEUE.md`）
+- **Step 1.5（新增）**：Publishability Gate（值不值得今天发？为什么？不发损失什么？）
+- **S 级**：Step 1.5 → 3 → 4 → 6 → 7（5-10分钟）
+- **M 级**：Step 1.5 → 2（Gemini → Claude → Gemini）→ 3 → 4 → 6 → 7（15-25分钟）
+- **L 级**：Step 1.5 → 2（+ GPT 仲裁）→ 3 → 4 → 5.5（notebooklm）→ 6 → 7（25-40分钟）
+- **Step 8（新增）**：日结与周复盘（main 写 `WEEKLY-RETRO.md` + 记忆沉淀）
 - ⛔ Step 7 晨星确认门控：未经确认，绝不发布
+- 当前仅激活 **小红书**；知乎 / 抖音 / X 模板保留但默认不启动
 
 ### 星鉴流水线 v2.0
 - **Step 1**: 任务分级（Q/S/D） → **1.5**: gemini 扫描 → **2A**: openai 宪法 → **2B**: notebooklm 研究 → **3**: claude 复核 → **4**: gemini 一致性 → **5**: 仲裁（按需）→ **6**: docs 定稿 → **7**: announce

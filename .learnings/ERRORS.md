@@ -533,3 +533,224 @@ Offset 120 is beyond end of file (66 lines total)
 
 ### Metadata
 - Source: manual/main-session
+
+---
+
+## [ERR-20260318-X-PUBLIC-FETCH]
+
+**Logged**: 2026-03-17T16:30:00Z
+**Priority**: medium
+**Status**: pending
+**Area**: web
+
+### Summary
+抓取 X/Twitter 公开链接时，`web_fetch` 可能因目标解析到 private/internal/special-use IP 而被 SSRF 策略拦截，不能把它当成稳定读取 X 内容的默认方案。
+
+### Details
+尝试读取 `https://x.com/Saboo_Shubham_/status/2022014147450614038` 时，`web_fetch` 返回：`Blocked: resolves to private/internal/special-use IP address`。同一任务中 Brave 搜索也因缺少 API key 不可用。最终改用 `browser open + browser evaluate(document.body.innerText)` 成功拿到正文文本。
+
+### Suggested Action
+读取公开 X 帖时优先顺序改为：
+1. 若 `xurl auth status` 可用 → 用 `xurl read`
+2. 若无鉴权且只是阅读公开内容 → 直接用 `browser` 打开并 `evaluate`/snapshot 提取文本
+3. 不把 `web_fetch` 作为读取 X 公链的主路径
+
+### Metadata
+- Source: manual/main-session
+
+---
+
+## [ERR-20260318-IMAGE-MINIMAX-VLM]
+
+**Logged**: 2026-03-17T16:31:00Z
+**Priority**: medium
+**Status**: pending
+**Area**: image
+
+### Summary
+当前 image 工具背后的 MiniMax VLM 计划不支持所请求模型/能力，不能假设截图 OCR/理解一定可用。
+
+### Details
+对浏览器截图调用 `image` 试图抽取 X 页面文本时，返回：`MiniMax VLM API error (2061): your current code plan not support model, coding-plan-vlm`。这说明当前账户/套餐下，image 工具不适合作为通用网页截图 OCR fallback。
+
+### Suggested Action
+当任务目标是“从网页提文本”时，优先使用：
+1. `browser act evaluate(() => document.body.innerText)`
+2. DOM snapshot / aria snapshot
+3. 仅在页面文本确实不可直接提取时，再考虑 image 工具
+不要把 `image` 作为网页文本抽取的默认后备路径。
+
+### Metadata
+- Source: manual/main-session
+
+## [ERR-20260318-LDB] lancedb_to_lance_missing_dependency
+
+**Logged**: 2026-03-17T23:56:45.314107+00:00
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+Attempted to use `lancedb.Table.to_lance()` for memory inspection, but the optional `lance` Python package was not installed.
+
+### Error
+```
+Traceback (most recent call last):
+  File ".../lancedb/table.py", line 1840, in to_lance
+    import lance
+ModuleNotFoundError: No module named 'lance'
+ImportError: The lance library is required to use this function. Please install with `pip install pylance`.
+```
+
+### Context
+- Operation attempted: inspect LanceDB memories table for duplicate/noise cleanup
+- Initial approach: `table.to_lance().to_table(...)`
+- Working fallback: use `table.to_arrow()` instead; it is already available and sufficient for row scanning / dedupe work
+
+### Suggested Fix
+Prefer `to_arrow()` for inspection scripts in this environment unless `lance`/`pylance` is explicitly installed and verified.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/memory/lancedb-pro
+
+---
+
+## [ERR-20260318-CHERRYPICK-PACKAGEJSON] cherry_pick_test_script_conflict
+
+**Logged**: 2026-03-18T00:38:48.844339+00:00
+**Priority**: medium
+**Status**: learned
+**Area**: git/worktree
+
+### Summary
+Cherry-picking runtime plugin commits into other worktrees repeatedly conflicted in `package.json` on the `scripts.test` line, because each branch carried a different test suite baseline.
+
+### Pattern
+- code files often auto-merge cleanly
+- `package.json` test script conflicts
+- correct resolution is to preserve branch-local tests and append newly added regression tests
+
+### Fix Pattern
+When cherry-picking test-related commits across memory-lancedb-pro worktrees:
+1. inspect conflicted `package.json`
+2. keep branch-specific existing test entries
+3. append new regression test(s) from the incoming commit
+4. `git add ... && git cherry-pick --continue`
+
+---
+
+## [ERR-20260318-EDIT-EXACT-MATCH] edit_exact_text_mismatch
+
+**Logged**: 2026-03-18T00:38:48.844339+00:00
+**Priority**: low
+**Status**: learned
+**Area**: tooling
+
+### Summary
+`edit` failed because the requested old text did not match the file exactly (including whitespace / conflict markers / indentation).
+
+### Fix Pattern
+Before retrying `edit` on a conflicted or partially changed file:
+1. `read` the precise local slice again
+2. copy exact current text including whitespace and conflict markers
+3. apply the replacement against that exact block
+
+---
+## [ERR-20260318-001] read-tool-offset-beyond-end
+
+**Logged**: 2026-03-18T14:33:00Z
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+`read` tool was called with an offset beyond the end of `notebooklm/SKILL.md`, causing a non-fatal tool error during skill audit.
+
+### Error
+```
+Offset 261 is beyond end of file (253 lines total)
+```
+
+### Context
+- Operation: read remaining lines of `~/.openclaw/skills/notebooklm/SKILL.md`
+- Cause: used a fixed follow-up offset without checking file length from prior `wc -l`
+- Impact: no user-facing failure; work continued normally
+
+### Suggested Fix
+When paging file reads, use the known total line count first, or increment from the previous read result instead of assuming another page exists.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/lucifinil_chen/.openclaw/skills/notebooklm/SKILL.md
+- See Also: none
+
+### Resolution
+- **Resolved**: 2026-03-18T14:33:00Z
+- **Commit/PR**: n/a
+- **Notes**: Logged as a recurring hygiene reminder; no code change required.
+
+---
+## [ERR-20260318-002] cron-check-memory-pr-status-timeout
+
+**Logged**: 2026-03-18T14:48:00Z
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+`check-memory-lancedb-pr-status` cron has timed out repeatedly in main-session systemEvent mode.
+
+### Error
+```
+cron: job execution timed out
+```
+
+### Context
+- Job: `check-memory-lancedb-pr-status`
+- Recent pattern: 2 consecutive timeout runs, each close to ~16 minutes
+- Current shape: `sessionTarget=main` + `payload.kind=systemEvent`
+- Likely issue: prompt shape is too open-ended for a lightweight status-check reminder
+
+### Suggested Fix
+Convert the job to a lighter isolated run or tighten the reminder scope so it does not stall in the main session.
+
+### Metadata
+- Reproducible: yes
+- Related Files: cron job `496eeea6-7e88-4b03-b11c-df18149507c7`
+- See Also: ERR-20260318-003
+
+---
+
+## [ERR-20260318-003] cron-todo-autopilot-instability
+
+**Logged**: 2026-03-18T14:48:00Z
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+`todo-autopilot-v1` cron is unstable under current prompt size and workload, showing timeout and provider-side failures.
+
+### Error
+```
+cron: job execution timed out
+Error: All models failed (2): anthropic/claude-sonnet-4-6: LLM request timed out. (timeout) | openai/gpt-5.4: LLM request timed out. (timeout)
+An error occurred while processing your request... request ID 196cca68-3d4c-41ee-b6df-deaa25565a12
+```
+
+### Context
+- Job: `todo-autopilot-v1`
+- Recent pattern: cron timeout + dual-model timeout + provider 5xx/platform failure
+- Current prompt reads many files and asks for multi-step execution + dual sync + reporting
+- Earlier runs succeeded when the task stayed narrow and sync-oriented
+
+### Suggested Fix
+Shrink the prompt scope, reduce required file reads, bias toward lightweight sync/closure work, and avoid turning a recurring cron into a heavy general-purpose execution loop.
+
+### Metadata
+- Reproducible: yes
+- Related Files: cron job `5bdd1d4d-62d9-4403-aafb-fc260a7189ec`
+- See Also: ERR-20260318-002
+
+---

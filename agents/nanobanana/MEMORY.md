@@ -56,7 +56,7 @@
 
 ## 输入格式
 从 wemedia agent 读取配图提示词：
-- `~/.openclaw/workspace/agents/wemedia/drafts/prompts.md`
+- `~/.openclaw/workspace/intel/collaboration/media/wemedia/drafts/prompts.md`
 
 ## 输出格式
 返回本地真实文件路径：

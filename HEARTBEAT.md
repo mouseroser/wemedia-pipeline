@@ -80,8 +80,8 @@ bash ~/.openclaw/scripts/post-upgrade-guard.sh
 1. **今日信号是否生成**
 ```bash
 today=$(date +%Y-%m-%d)
-if [ -f ~/.openclaw/workspace/intel/media-ops/DAILY-SIGNAL-BRIEF.md ]; then
-  grep -q "$today\|最后更新:" ~/.openclaw/workspace/intel/media-ops/DAILY-SIGNAL-BRIEF.md && echo SIGNAL_OK || echo SIGNAL_MISSING
+if [ -f ~/.openclaw/workspace/intel/media-tools/DAILY-SIGNAL-BRIEF.md ]; then
+  grep -q "$today\|最后更新:" ~/.openclaw/workspace/intel/media-tools/DAILY-SIGNAL-BRIEF.md && echo SIGNAL_OK || echo SIGNAL_MISSING
 else
   echo SIGNAL_MISSING
 fi
@@ -89,7 +89,7 @@ fi
 
 2. **今日计划是否存在**
 ```bash
-[ -f ~/.openclaw/workspace/intel/media-ops/DAILY-PUBLISH-PLAN.md ] && echo PLAN_OK || echo PLAN_MISSING
+[ -f ~/.openclaw/workspace/intel/media-tools/DAILY-PUBLISH-PLAN.md ] && echo PLAN_OK || echo PLAN_MISSING
 ```
 
 3. **关键 cron 是否异常**

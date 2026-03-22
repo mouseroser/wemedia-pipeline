@@ -39,7 +39,7 @@ Don't ask permission. Just do it.
 - **Step 7**: announce 通知晨星确认
 
 ### 自媒体流水线 v1.1 / 运营系统 v1.1
-- **Step 0（新增）**：持续研究层（gemini 早/午/晚扫描，写 `intel/media-ops/DAILY-SIGNAL-BRIEF.md` 与 `HOT-SCAN-INBOX.md`）
+- **Step 0（新增）**：持续研究层（gemini 早/午/晚扫描，写 `intel/media-tools/DAILY-SIGNAL-BRIEF.md` 与 `HOT-SCAN-INBOX.md`）
 - **Step 1（新增）**：内容队列层（main 维护 `HOT-QUEUE.md` / `EVERGREEN-QUEUE.md` / `SERIES-QUEUE.md`）
 - **Step 1.5（新增）**：Publishability Gate（值不值得今天发？为什么？不发损失什么？）
 - **S 级**：Step 1.5 → 3 → 4 → 6 → 7（5-10分钟）

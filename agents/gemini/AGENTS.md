@@ -317,7 +317,7 @@
 5. 可保留项
 
 #### 输出要求
-1. 保存复核结果到：`~/reports/review-stareval-YYYYMMDD-HHMMSS.md`
+1. 保存复核结果到：`intel/collaboration/stareval/reviews/review-stareval-YYYYMMDD-HHMMSS.md`
 2. 向织梦群推送复核完成通知
 3. 向监控群推送复核完成通知
 4. 返回结构化摘要给 main

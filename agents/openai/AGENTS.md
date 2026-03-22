@@ -374,7 +374,7 @@
 - ❌ 不为小问题推翻主结构
 
 #### 输出要求
-1. 保存仲裁结果到：`~/arbitration-stareval-YYYYMMDD-HHMMSS.md`
+1. 保存仲裁结果到：`intel/collaboration/stareval/arbitration/arbitration-stareval-YYYYMMDD-HHMMSS.md`
 2. 向小曼群（-5242027093）推送仲裁完成通知
 3. 向监控群（-5131273722）推送仲裁完成通知
 4. 返回结构化摘要给 main（包含文件路径、裁决结论、总分）

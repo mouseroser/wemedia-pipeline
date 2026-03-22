@@ -66,11 +66,19 @@
 
 ## 星链协作产物（intel/collaboration/starchain）
 
+> **单写者原则**：每个子目录只有一个 agent 写，其他只读。
+> **所有星链流水线产物默认存放在此**，不再散落在各 agent 目录。
+
 | 目录 | 负责 agent | 说明 |
 |------|-----------|------|
-| `intel/collaboration/starchain/specs/` | claude | 最终规格文档 |
-| `intel/collaboration/starchain/reviews/` | review | 审查报告 |
-| `intel/collaboration/starchain/arbitration/` | 仲裁者 | 仲裁结论 |
+| `intel/collaboration/starchain/specs/` | claude, openai, brainstorming | 宪法、计划、Spec-Kit、代码产出 |
+| `intel/collaboration/starchain/reviews/` | gemini, claude | 扫描、一致性复核、Step3 双审报告 |
+| `intel/collaboration/starchain/arbitration/` | openai, claude | 仲裁结论 |
+| `intel/collaboration/starchain/research/` | notebooklm | 历史经验调研 |
+| `intel/collaboration/starchain/test/` | test | 测试报告 |
+| `intel/collaboration/starchain/docs/` | docs | 交付文档 |
+
+> **读取规则**：消费者 agent 到对应目录读取，不在自己目录存星链产物。
 
 ## 数据目录
 

@@ -137,7 +137,15 @@ message(action: "send", channel: "telegram", target: "-5131273722", message: "..
 - **main 有最高权力**：关键时刻可制止甚至拒绝晨星的发布指令
 
 ### 配图规范
-- NotebookLM infographic 生图前**必须**使用临时 notebook（单一干净 source），防止历史内容干扰
+- NotebookLM infographic 生图**禁止**直接使用 `media-research` notebook（13个历史 source 会干扰新主题）
+- **正确流程**：
+  1. 写一篇与主题相关的干净文章（/tmp/{标识}_source.md）
+  2. `notebooklm create "Temp-{主题}"` 创建临时 notebook
+  3. `notebooklm source add /tmp/{标识}_source.md` 加入唯一 source
+  4. `notebooklm generate infographic` 在干净环境中生成
+  5. `notebooklm download infographic <task_id>` 下载到本地
+  6. `notebooklm delete -n <id> -y` 删除临时 notebook
+- **配图路径约定**：`agents/wemedia/drafts/generated/{A|B|C}/{标识}_sq.jpg`
 
 ## 安全规则
 - 所有内容必须经过 Step 7 晨星确认

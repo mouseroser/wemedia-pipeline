@@ -8,10 +8,10 @@
 - **Telegram 群**: 自媒体 (-5146160953)
 
 ## Workspace 架构
-- **我的工作目录**: `~/.openclaw/workspace/agents/wemedia/`
-  - `drafts/` - 内容草稿
-  - `platforms/` - 各平台版本
-  - `content-calendar/` - 内容排期
+- **我的工作目录**: `~/.openclaw/workspace/intel/collaboration/media/wemedia/`
+  - `drafts/{A,B,C}/` - 待发布内容草稿
+  - `review/` - 审查反馈
+- **配图目录**: `~/.openclaw/workspace/intel/collaboration/media/images/`
 - **Main agent 目录**: `~/.openclaw/workspace/`
 - **协作目录**: `~/.openclaw/workspace/intel/`
   - **联合工作材料**: `~/.openclaw/workspace/intel/collaboration/` (多 agent 联合工作的非正式产物)
@@ -45,8 +45,7 @@
    - 内容计划（Claude Code）
    - 平台模板
 2. 创作内容：
-   - `drafts/draft.md` - 文案正文（正文末尾加标签行）
-   - `drafts/prompts.md` - 配图提示词（供参考，Step 5 自己执行）
+   - `intel/collaboration/media/wemedia/drafts/{A|B|C}/{标识}.txt` - 文案正文（正文末尾加标签行）
 3. 文案必须适配目标平台风格：
    - 小红书：种草风、emoji、标签
    - 知乎：专业风、逻辑清晰
@@ -83,7 +82,7 @@ notebooklm delete -n <notebook-id-prefix> -y
 **注意**：
 - `media-research` notebook **禁止**直接用于生图（历史 source 干扰）
 - 临时 notebook 用完即删，不保留
-- 图片保存路径：`drafts/generated/{A|B|C}/{标识}_sq.jpg`
+- 图片保存路径：`intel/collaboration/media/images/{A|B|C}/{标识}_sq.jpg`
 
 ### Step 6 多平台适配 + 排期
 1. 接收最终草稿
@@ -171,7 +170,7 @@ message(action: "send", channel: "telegram", target: "-5131273722", message: "..
   4. `notebooklm generate infographic` 在干净环境中生成
   5. `notebooklm download infographic <task_id>` 下载到本地
   6. `notebooklm delete -n <id> -y` 删除临时 notebook
-- **配图路径约定**：`agents/wemedia/drafts/generated/{A|B|C}/{标识}_sq.jpg`
+- **配图路径约定**：`intel/collaboration/media/wemedia/drafts/generated/{A|B|C}/{标识}_sq.jpg`
 
 ## 安全规则
 - 所有内容必须经过 Step 7 晨星确认

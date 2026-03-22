@@ -52,6 +52,26 @@
 | memory-lancedb-pro (workspace) | `~/.openclaw/workspace/plugins/memory-lancedb-pro/` |
 | local-rerank-sidecar | `~/.openclaw/workspace/services/local-rerank-sidecar/` |
 
+## 自媒体协作产物（intel/collaboration/media）
+
+> **单写者原则**：每个子目录只有一个 agent 写，其他只读。
+
+| 目录 | 负责 agent | 说明 |
+|------|-----------|------|
+| `intel/collaboration/media/wemedia/drafts/{A,B,C}/` | wemedia | 待发布内容草稿 |
+| `intel/collaboration/media/wemedia/review/` | wemedia | 审查反馈存放 |
+| `intel/collaboration/media/gemini/reviews/` | gemini | 审查报告 |
+| `intel/collaboration/media/constitution/briefs/` | openai | 宪法简报 |
+| `intel/collaboration/media/images/` | wemedia | 配图（NotebookLM 产出） |
+
+## 星链协作产物（intel/collaboration/starchain）
+
+| 目录 | 负责 agent | 说明 |
+|------|-----------|------|
+| `intel/collaboration/starchain/specs/` | claude | 最终规格文档 |
+| `intel/collaboration/starchain/reviews/` | review | 审查报告 |
+| `intel/collaboration/starchain/arbitration/` | 仲裁者 | 仲裁结论 |
+
 ## 数据目录
 
 | 目录 | 说明 |

@@ -64,6 +64,21 @@
 | `intel/collaboration/media/constitution/briefs/` | openai | 宪法简报 |
 | `intel/collaboration/media/images/` | wemedia | 配图（NotebookLM 产出） |
 
+## 星鉴协作产物（intel/collaboration/stareval）
+
+> **单写者原则**：每个子目录只有一个 agent 写，其他只读。
+> **所有星鉴流水线产物默认存放在此**，不再散落在各 agent 目录。
+
+| 目录 | 负责 agent | 说明 |
+|------|-----------|------|
+| `intel/collaboration/stareval/constitution/` | openai | 宪法简报 |
+| `intel/collaboration/stareval/reviews/` | gemini, claude | 扫描、一致性复核、Step3 复核 |
+| `intel/collaboration/stareval/research/` | notebooklm | 研究报告 |
+| `intel/collaboration/stareval/arbitration/` | openai, claude | 仲裁结论 |
+| `intel/collaboration/stareval/deliverables/` | docs | 最终交付报告 |
+
+> **读取规则**：消费者 agent 到对应目录读取，不在自己目录存星鉴产物。
+
 ## 星链协作产物（intel/collaboration/starchain）
 
 > **单写者原则**：每个子目录只有一个 agent 写，其他只读。

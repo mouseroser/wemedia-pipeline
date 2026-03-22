@@ -96,7 +96,7 @@ wemedia agent 完成创作后，必须输出以下标准格式，供 main 调用
 - `openai`：仅在高风险 / 明显分歧时仲裁
 - `notebooklm`：按需深研 + **配图生成**（infographic，bento-grid 风格）
 - `wemedia`：正文创作、改稿、平台适配
-- ~~`nano-banana`~~：已废弃（统一使用 NotebookLM）
+- ~~`nanobanana`~~：已废弃（统一使用 NotebookLM）
 
 ## Model Rule of Thumb
 

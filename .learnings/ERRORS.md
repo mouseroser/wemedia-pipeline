@@ -882,3 +882,105 @@ zsh:cd:1: no such file or directory: /Users/lucifinil_chen/.openclaw/skills/xiao
 - Related Files: ~/.openclaw/skills/creator-ops/persona.md
 
 ---
+
+## 2026-03-23: NotebookLM CLI 命令语法错误
+
+**错误 1**: `notebooklm notebook create` → 正确: `notebooklm create`（没有 `notebook` 子命令前缀）
+**错误 2**: `notebooklm delete <id> --yes` → 正确: `notebooklm delete` 不接位置参数，需要 `notebooklm use <id>` 后 `notebooklm delete`（或查 `notebooklm delete --help` 确认用法）
+**根因**: 凭印象调用，未先 `--help` 验证语法
+**教训**: 任何不确定的 CLI 先跑 `--help`（MEMORY.md 血泪教训 #5）
+
+## 2026-03-23: sub-agent message 工具配置用错 key
+
+**错误**：在 openclaw.json 中错误使用 `alsoAllow: ["message"]` 而非文档中规定的 `allow: ["message"]`。
+
+**症状**：sub-agent 反馈 "没有 message 工具权限"，无法向 Telegram 群发送通知。
+
+**根因**：schema lookup 返回的数据中同时包含 `allow`、`alsoAllow`、`deny` 三个字段（都是数组），我错误地判断 `alsoAllow` 是"允许"的意思并使用它。但官方文档（docs/tools/subagents.md）明确指出正确 key 是 `allow` 和 `deny`，其中 `deny` 优先。`alsoAllow` 在 schema 中存在但未被系统正确处理（形同无效 key）。
+
+**教训**：
+1. 配置类修改必须对照官方文档（docs/）而非仅凭 schema raw data 推断
+2. 遇到"不起作用"的配置，优先检查 key 名称是否与文档一致
+3. 官方文档示例：`tools.subagents.tools.allow: ["message"]`
+
+**修复**：将 `tools.subagents.tools.alsoAllow` 改为 `tools.subagents.tools.allow`
+
+## 2026-03-23: sub-agent message 工具配置 — 最终结论
+
+**错误**：
+1. 错误使用 `alsoAllow: ["message"]`（非有效 key）
+2. 改为 `allow: ["message"]` 后，sub-agent 反而只剩 message 工具，exec/read 等全被屏蔽
+3. 删除配置后测试确认：sub-agent 默认工具集里根本没有 `message`
+
+**最终结论**：`sessions_spawn` 创建的 isolated session 没有 `message` 工具，这是 OpenClaw 的架构限制，配置无法改变。
+
+**正确架构**：sub-agent 只返回结果，main 统一推送通知到职能群 + 监控群。
+
+**教训**：
+1. 配置更改后必须实测验证，不能只凭文档推断
+2. 当配置不起作用时，直接问用户/查源码
+3. 接受系统限制比绕过更高效
+
+**已更新**：
+- wemedia SKILL.md ✅
+- starchain pipeline-v2-8/7-contract.md ✅
+- stareval SKILL.md ✅
+
+## 2026-03-23 下午
+
+### browser act 常见错误
+1. `ref or selector is required` — 使用 x/y 坐标点击时必须提供 ref 或 selector，不能用坐标
+2. `fields are required` — kind=fill 时需要 fields 数组格式，不能用 ref+text 分开传
+3. `Error: Element "eXX" not found or not visible` — 页面已刷新，ref 失效，需要重新 snapshot
+4. `TimeoutError: locator.click: Timeout 8000ms exceeded` — Playwright locator 超时，ref 格式不匹配，改用 selector 字符串
+
+### WhatsApp Echo 问题
+- 现象：消息被重复发送/收到，疑似 gateway wspp 协议问题
+- 影响：干扰正常对话，晨星决定迁移到 Telegram
+- 状态：未解决，属于 OpenClaw WhatsApp gateway bug
+
+
+## MiniMax API 持续离线 (2026-03-24 00:32 - 持续中)
+- **现象**: `minimax/MiniMax-M2.7` 所有请求超时 120-300s，profile `minimax:cn`
+- **影响**: 8 个 cron 任务 ERROR (post-upgrade-guard, layer2-health-check, memory-quality-audit, sync-high-priority-memories, media-signal-noon/evening, media-daily-retro, todo-daily-check)
+- **Failover 行为**: 先切 minimax:cn 再切 openai/gpt-5.4，两个都超时
+- **调查**: api.minimaxi.com 返回 404 Not Found，疑似 API endpoint 变更
+- **状态**: 已报告晨星，等待指示
+
+## 2026-03-24 抖音 Smoke Test 踩坑记录
+
+### 问题 1：browser tool upload 路径限制
+**现象**：`browser(action=upload)` 要求文件必须在 `/tmp/openclaw/uploads/` 目录下
+**错误**：`Invalid path: must stay within uploads directory (/tmp/openclaw/uploads)`
+**解决**：测试视频/封面等文件必须先 cp 到该目录，或直接在该目录生成
+
+### 问题 2：browser tool act 的 ref 不稳定
+**现象**：对话框中的按钮 ref 在每次 snapshot 后可能变化（如 e20 在上一次 snapshot 里有，下一次就没了）
+**解决**：用 `evaluate` + JS 查找元素（className、textContent 定位），比 ref 更可靠
+
+### 问题 3：CDP WebSocket origin 被拒绝
+**现象**：`cdp_client.py` 的 websocket 连接被 Chrome 拒绝（403 Forbidden - Rejected incoming WebSocket connection from http://127.0.0.1:18800）
+**原因**：openclaw 托管的 Chrome 启动时没有 `--remote-allow-origins=*` 参数
+**影响**：自定义 CDP 脚本无法复用 openclaw browser 的登录态，必须另开 Playwright 独立 browser
+**绕过方法**：见问题 4
+
+### 问题 4：Playwright 独立 browser 无法复用登录态
+**现象**：用 Playwright 新开的 browser（即使指定了 douyin_auth.json cookies）仍然是未登录状态
+**原因**：抖音的 httpOnly cookie 无法通过 Playwright add_cookies 设置；且可能检测到 automation 控制
+**解决**：用 openclaw browser（已登录）做上传，用 Playwright 独立 browser 做封面设置
+
+### 问题 5：browser tool 上传文件后无法在 file input 中设置真实文件
+**现象**：通过 `browser(action=upload)` 触发文件选择后，JS 的 DataTransfer API 无法设置真实文件路径（安全限制）
+**解决**：openclaw browser 的 `browser(action=upload)` + 点击触发 是正确路径；问题在于 openclaw browser 的 upload 机制和 CDP upload command 是两条独立链路
+
+### 验证成功的方法
+1. **视频上传**：`openclaw browser upload <path>` + 点击上传按钮（e9/e10）→ 成功
+2. **标题填写**：`browser(action=act, kind=fill, fields=[{ref, value}])` → 成功（注意要用 fields 数组格式）
+3. **隐私设置**：checkbox click → 成功
+4. **发布**：`browser(action=act, kind=click, ref=e16)` → 成功
+5. **封面对话框**：用 evaluate JS 查找并点击元素比 ref 更可靠
+
+### 关键路径
+- 视频文件：必须放在 `/tmp/openclaw/uploads/`
+- 封面文件：同上
+- OpenClaw Browser targetId：需要先 navigate 获取当前 tab 的 targetId

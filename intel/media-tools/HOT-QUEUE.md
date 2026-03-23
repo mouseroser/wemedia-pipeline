@@ -6,7 +6,7 @@
 ## 🔴 紧急（4h 内出稿）
 | 选题 | 来源 | 发现时间 | 时效窗口 | 推荐平台 | 推荐形式 | 状态 |
 |------|------|---------|---------|---------|---------|------|
-| OpenCode 开源 Coding Agent：120K Stars + 三强对比 | HOT-SCAN-INBOX 2026-03-21早 | 2026-03-21 | 短（24-48h） | 小红书 | 工具实测/三强对比 | 🔄 创作中（Step 2B Claude 执行计划） |
+| OpenCode 开源 Coding Agent：120K Stars + 三强对比 | HOT-SCAN-INBOX 2026-03-21早 | 2026-03-21 | 短（24-48h） | 小红书 | 工具实测/三强对比 | 🔄 弃用（Line 21 同一选题已发布 2026-03-22） |
 
 ## 🔴 今日 S级优先（3/20 深夜）
 
@@ -21,7 +21,7 @@
 | 🆕 OpenCode vs Claude Code vs Codex：开源 Coding Agent 三强格局 | HOT-SCAN-INBOX 2026-03-21早 | 2026-03-21 | 小红书 | 工具对比/格局拆解 | ✅ 已发布（2026-03-22） |
 | 🆕 Claude HUD 插件：让你看见 Coding Agent 在后台干了什么 | HOT-SCAN-INBOX 2026-03-21早 | 2026-03-21 | 小红书 | 工具推荐/开发者体验 | ✅ 已发布（B标，2026-03-22，09:51确认） |
 | OpenAI 收购 Astral：AI coding 竞争开始吞并基础设施 | HOT-SCAN-INBOX | 2026-03-20 | 小红书 | 趋势拆解/工具链解读 | 降级 → 系列下篇背景材料 |
-| Google AI Studio Antigravity + Firebase：Coding Agent 从\"写代码\"到\"交付系统\" | HOT-SCAN-INBOX | 2026-03-20 | 小红书 | 产品拆解/趋势判断 | 排期明天（今日 Coding Agent 方向已饱和） |
+| Google AI Studio Antigravity + Firebase：Coding Agent 从\"写代码\"到\"交付系统\" | HOT-SCAN-INBOX | 2026-03-20 | 小红书 | 产品拆解/趋势判断 | ✅ 已发布 2026-03-23 07:52 |
 | Gemini API 内置工具 + Function Calling 组合调用 | HOT-SCAN-INBOX | 2026-03-19 | 小红书 | 方法拆解/实操框架 | 顺延至本周（技术类时效宽松） |
 | Claude Dispatch：手机端远程委派桌面 Agent | HOT-SCAN-INBOX | 2026-03-19 | 小红书 | 趋势点评/交互分析 | 时效尾声，降为储备 |
 | Get Shit Done 工作流系统 | HOT-SCAN-INBOX | 2026-03-18 | 小红书 | 拆解/实操记录 | 待排期（时效宽松，可顺延） |

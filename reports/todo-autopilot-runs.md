@@ -148,6 +148,31 @@
 - 统计变化：总计 **38/86 → 39/86**；P1 **36/60 → 37/60**；M2.8 **1/6 → 2/6**
 - 阻塞：无
 
+## 2026-03-23 10:30 Asia/Shanghai
+- 选中任务：**4H.4**「接口边界决策：新工具 vs behind flag」
+- 诊断：
+  1. 4H.4 是 Deadline 2026-03-24（今日）的非 coding 决策文档任务
+  2. 缓解措施明确「4H.3-4H.4 可先做非 coding 部分（决策文档）」
+  3. 4E 观察期已有 9 天数据（含延伸期），决策依据充分
+  4. 4H.2 已收口固化接受边界，4H.4 是唯一剩余的纯文档决策项
+- 实际动作：
+  1. 基于 4E 数据分析两种方案（新工具 vs opt-in flag），产出决策文档
+  2. **决策：方案 B（旧工具 + opt-in flag）**，理由三条：接受边界优先 + L3 触发率 ~18% 不足以拆分新工具 + PR-A 先行不捆绑
+  3. 固化接口约束规范（flag 名、默认值、触发条件、输出格式、禁止事项）
+  4. 新增文档：`reports/4H4-interface-boundary-decision-20260323.md`
+  5. master 中 4H.4 标记为完成，补充输出路径
+  6. 更新风险区块（4H.4 已落地，4H.3/4H.5-4H.6 今日 Deadline 顺延提醒）
+  7. 刷新统计表（P1 +1，总计 +1，M2.8 +1，4H 来源 +1）
+  8. 更新头部时间戳
+  9. 追加 master B 区更新日志
+  10. 追加本条 runs 记录
+- 更新文件：
+  - `workspace/reports/4H4-interface-boundary-decision-20260323.md`（新增）
+  - `todo/master-execution-plan.md`
+  - `workspace/reports/todo-autopilot-runs.md`
+- 统计变化：总计 **44/86（51%）→ 45/86（52%）**；P1 **44/60（73%）→ 45/60（75%）**；M2.8 **2/6 → 3/6**；4H 来源 **2/6（33%）→ 3/6（50%）**
+- 阻塞：无
+
 ## 2026-03-22 20:30 Asia/Shanghai
 - 选中任务：master-execution-plan.md 里程碑 M2.7 状态同步 + P1/总计统计表修正
 - 诊断：
@@ -199,4 +224,19 @@
   - `todo/master-execution-plan.md`
   - `workspace/reports/todo-autopilot-runs.md`
 - 统计变化：无（纯风险文档收口，不涉及新完成任务；master 维持 39/86，45%）
+- 阻塞：无
+
+## 2026-03-23 20:30 Asia/Shanghai
+- 选中任务：4H Deadline 到期收口（原 Deadline 2026-03-24 今日确认无法推进）
+- 实际动作：
+  1. 确认 4H.3/4H.5/4H.6 均需 coding agent 或编码操作，不在 autopilot 范围
+  2. 将风险区块中 4H 的 Deadline 从「2026-03-24（今日）」更新为「2026-03-31（已顺延）」
+  3. 更新缓解措施与对应说明
+  4. 更新头部「上次更新」时间戳为 2026-03-23 20:30
+  5. 追加 master B 区更新日志（2026-03-23 20:30）
+  6. 追加本条 autopilot-runs 记录
+- 更新文件：
+  - `todo/master-execution-plan.md`
+  - `workspace/reports/todo-autopilot-runs.md`
+- 统计变化：无（Deadline 顺延收口，不涉及新完成任务；master 维持 45/86，52%）
 - 阻塞：无

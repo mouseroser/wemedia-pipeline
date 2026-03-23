@@ -1,6 +1,6 @@
 # MEMORY.md - 小光的长期记忆
 
-> 精简版 (2026-03-22 22:00)。完整历史备份：`memory/archive/MEMORY-2026-03-14-before.md`
+> 精简版 (2026-03-24 08:00)。完整历史备份：`memory/archive/MEMORY-2026-03-14-before.md`
 > 踩坑笔记完整版已存入 memory-lancedb-pro 向量数据库，按需召回。
 
 ---
@@ -22,6 +22,7 @@
 13. **旧 PR 基于过时分支时直接重建**：不要继续修脏 diff，基于 upstream 默认分支重建干净 PR。
 14. **重命名目录后必须 grep 内部引用**：否则路径全断。
 15. **小红书 CDP 发布频率限制**（2026-03-22 确立）：单日≤3篇、间隔≥3小时、申诉期间暂停；main 有最高权力制止发布。
+16. **browser upload 路径限制**：`browser(action=upload)` 要求文件必须在 `/tmp/openclaw/uploads/` 下；跨目录文件需先 cp 过去。
 
 ---
 
@@ -235,5 +236,23 @@
 
 ---
 
-**最后更新**: 2026-03-22 22:00 (小光 MEMORY.md 维护)
+## 本周重大事件（2026-03-23 ~ 2026-03-24）
+
+### 抖音 CDP Smoke Test 完成（03-24）
+- **全链路验证成功**：视频上传 → 标题填写 → 仅自己可见 → 真正发布 ✅
+- 视频：FFmpeg 生成 10s 测试视频（22K）
+- 封面：Python PIL 生成竖版（1080×1920）+ 横版（1600×1200）
+- 踩坑：browser upload 路径限制 `/tmp/openclaw/uploads/`、ref 不稳定、CDP origin 被拒
+- 完整踩坑记录：`.learnings/ERRORS.md`（2026-03-24 条目）
+- Skill 更新：`~/.openclaw/skills/douyin/SKILL.md` 已存在
+
+### 抖音登录态复用问题（03-24）
+- OpenClaw Browser（18800）：已登录，可直接操作创作者中心
+- Playwright 独立 Browser：无法复用 httpOnly cookie，始终未登录
+- 解决：所有上传操作必须用 openclaw browser；封面设置需另辟蹊径
+- `/tmp/douyin_auth.json` 有 37 条 cookie，但 20 条可设置（httpOnly 被排除）
+
+---
+
+**最后更新**: 2026-03-24 08:00 (小光 MEMORY.md 维护)
 **下次回顾**: 2026-03-29（每周日）

@@ -39,7 +39,11 @@ python3 ~/.openclaw/skills/douyin-skill/scripts/publish_douyin.py \
 
 python3 ~/.openclaw/skills/douyin-skill/scripts/publish_douyin.py \
   --pack ~/.openclaw/workspace/intel/collaboration/media/wemedia/douyin/{content_id}.md \
-  --full
+  --step check_duplicate
+
+python3 ~/.openclaw/skills/douyin-skill/scripts/publish_douyin.py \
+  --pack ~/.openclaw/workspace/intel/collaboration/media/wemedia/douyin/{content_id}.md \
+  --step full
 ```
 
 ## 备注

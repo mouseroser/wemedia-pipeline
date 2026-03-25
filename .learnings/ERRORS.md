@@ -1085,3 +1085,104 @@ When deleting known memories in the main scope, always pass `scope="agent:main"`
 - See Also: 783cc26d-18b3-416f-a023-b5204939fdd4
 
 ---
+
+## [ERR-20260326-001] openclaw_cron_cli_wrong_flags
+
+**Logged**: 2026-03-26T00:55:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+Tried `openclaw cron run <job-id> --dry-run`, but the CLI does not support `--dry-run` for `cron run`.
+
+### Error
+```
+error: unknown option '--dry-run'
+```
+
+### Context
+- Operation attempted: inspect/debug `post-upgrade-guard` cron execution without actually triggering a real run
+- Assumption was based on common CLI patterns, not OpenClaw's actual cron interface
+- Similar prior mistake: guessed `openclaw cron logs` / `info`, which also do not exist
+
+### Suggested Fix
+Before using less-common OpenClaw cron subcommands/options, run `openclaw cron --help` (or the specific subcommand help) and use only documented flags.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/workspace/.learnings/ERRORS.md
+- See Also: 2026-03-25 cron command guessing entry above
+
+---
+
+## [ERR-20260326-002] memory_plugin_merge_residue_duplicate_createLlmClient
+
+**Logged**: 2026-03-26T00:55:30+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+During the memory-lancedb-pro beta.10 upgrade, merge residue in `src/llm-client.ts` left two `createLlmClient` declarations, causing the runtime plugin to fail to load after restart.
+
+### Error
+```
+[plugins] memory-lancedb-pro failed to load ...
+Error: ParseError: Identifier 'createLlmClient' has already been declared.
+```
+
+### Context
+- Operation attempted: upgrade runtime plugin to `memory-lancedb-pro@1.1.0-beta.10`
+- A merge conflict had been resolved incompletely: old local JSON-hardening implementation and beta.10 OAuth/factory implementation both remained in the same file
+- Failure surfaced only after gateway restart, when the runtime plugin recompiled/loaded
+
+### Suggested Fix
+After resolving upgrade merges in runtime plugins, grep for duplicate exported symbols in touched files and do one post-restart plugin-load smoke check (`openclaw status` / gateway logs) before considering the upgrade complete.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/runtime-plugins/memory-lancedb-pro/src/llm-client.ts, ~/.openclaw/logs/gateway.err.log
+- See Also: memory-lancedb-pro beta.10 upgrade work on 2026-03-25
+
+### Resolution
+- **Resolved**: 2026-03-25T21:33:00+08:00
+- **Commit/PR**: runtime worktree local fix
+- **Notes**: Removed duplicate `createLlmClient` block, kept beta.10 OAuth/factory implementation plus local JSON-defense behavior, restarted gateway, and verified `memory_stats` / `memory_list` / `memory_recall` / isolated write smoke all passed.
+
+---
+## [ERR-20260326-003] git_add_pathspec_deleted_untracked_files
+
+**Logged**: 2026-03-26T01:20:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+After deleting a mixed set of tracked and untracked workspace files, `git add -A -- <paths...>` failed because the path list still included untracked files that no longer existed (for example `.DS_Store`).
+
+### Error
+```
+致命错误：路径规格 '.DS_Store' 未匹配任何文件
+subprocess.CalledProcessError: ... git add -A -- <paths...> returned non-zero exit status 128
+```
+
+### Context
+- Operation attempted: batch-clean temporary workspace artifacts, then stage only that cleanup as an isolated commit
+- The deletion list mixed tracked files with untracked files
+- Once deleted, some untracked files no longer matched any git pathspec, which caused `git add` to abort
+
+### Suggested Fix
+When staging deletions from a mixed file set, first filter with `git ls-files --error-unmatch` and run `git add -u -- <tracked-paths>` only on paths that are actually tracked.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/workspace/.learnings/ERRORS.md
+- See Also: ERR-20260326-001
+
+### Resolution
+- **Resolved**: 2026-03-26T01:16:00+08:00
+- **Commit/PR**: 9d2205c
+- **Notes**: Re-ran staging with a tracked-only filter and committed the cleanup successfully.
+
+---

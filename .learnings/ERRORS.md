@@ -1186,3 +1186,39 @@ When staging deletions from a mixed file set, first filter with `git ls-files --
 - **Notes**: Re-ran staging with a tracked-only filter and committed the cleanup successfully.
 
 ---
+## [ERR-20260326-004] edit_tool_non_unique_anchor_match
+
+**Logged**: 2026-03-26T01:24:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Tried to use the `edit` tool with an `old_string` anchor that appeared many times in the file, so the edit failed with a non-unique match error.
+
+### Error
+```
+Found 28 occurrences of the text ... The text must be unique. Please provide more context to make it unique.
+```
+
+### Context
+- Operation attempted: append a new error entry into `.learnings/ERRORS.md`
+- Used a generic anchor (`---`) that appears repeatedly between entries
+- The edit tool requires an exact unique match, so generic separators are unsafe anchors in append-heavy markdown logs
+
+### Suggested Fix
+For append-heavy files, avoid `edit` with generic separators. Use either:
+1. `exec` with shell append (`cat >> file <<'EOF' ... EOF`), or
+2. `edit` with a longer unique trailer block from the file tail.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ~/.openclaw/workspace/.learnings/ERRORS.md
+- See Also: ERR-20260326-003
+
+### Resolution
+- **Resolved**: 2026-03-26T01:18:00+08:00
+- **Commit/PR**: c5a8511
+- **Notes**: Switched to shell append and then staged/committed normally.
+
+---

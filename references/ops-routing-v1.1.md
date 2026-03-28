@@ -95,18 +95,20 @@ notebooklm download infographic <task-id> \
 - 当前默认输出 `xiaohongshu.md`
 - 仅在晨星明确要求时再生成 `douyin.md` / `zhihu.md`
 
-### Step 7：晨星确认
-- main 汇总交付
-- 未经确认绝不外发
+### Step 7：晨星确认（wemedia → sessions_send → main → 晨星 DM）
+- **wemedia**：Step 6 完成后，`sessions_send(sessionKey="agent:main:main", message="Step 6 完成 [{内容ID}] 等待 Step 7 确认\n标题：{标题}\n配图：{路径}\n发布包：{路径}")` 回 main
+- **main**：收到后 DM 晨星确认
+- **晨星确认后**：main `sessions_send(label="wemedia-pipeline", message="Step 7 确认：{内容ID} 已授权发布")` 放行
+- 未经晨星确认绝不外发
 
-### Step 7.5：main 下发确认，wemedia 执行平台发布
-- main 在 Step 7 确认后通知 wemedia 执行发布，并传入最终发布包 / 素材路径
-- wemedia 读取发布包，按平台选择执行工具：
+### Step 7.5：wemedia 收到放行指令后执行平台发布
+- wemedia 在 persistent session 收到 main 的 Step 7 放行指令后，自行执行发布
+- 按平台选择执行工具：
   - 小红书：调用 `xiaohongshu/scripts/publish_pipeline.py`
   - 抖音：调用 `douyin/scripts/publish_douyin.py`
-- wemedia 回传发布结果给 main
-- 成功：main 更新 HOT-QUEUE.md 状态 → ✅ 已发布，并记录帖子 ID / 审核状态到监控群
-- 失败：main 降级为手动发布（通知晨星介入）
+- 发布完成后 `sessions_send(sessionKey="agent:main:main", message="Step 7.5 完成 [{内容ID}]\n状态：{成功/失败}\n{详情}")` 回传 main
+- **main**：收到后更新 HOT-QUEUE.md 状态，补推监控群，DM 晨星最终结果
+- 失败：wemedia sessions_send 回 main 标注 BLOCKED，main 通知晨星介入
 
 ### Step 8：日结 / 周复盘
 - main 记录当天运营结论和后续动作

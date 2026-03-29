@@ -115,9 +115,9 @@ notebooklm download infographic <task-id> \
 
 ## 分级路由
 
-- **S 级**：Step 1.5 → **Step 2A + Step 2B**（跳过 2C/2D）→ Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → **Step 7.5** → Step 8
-- **M 级**：Step 1.5 → Step 2（2A+2B+2C+2D 全走）→ Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → **Step 7.5** → Step 8
-- **L 级**：Step 1.5 → Step 2（全四步 + GPT 仲裁）→ Step 3 → Step 4 → Step 5 → Step 5.5（衍生评估）→ Step 6 → Step 7 → **Step 7.5** → Step 8
+- **S 级**：Step 1.5 → 织梭（Step 2A+2B）→ wemedia Step 3 → 织梭（Step 4+4.5）→ 织梭 Step 5 → wemedia Step 6 → Step 7 → 织梭放行 → wemedia **Step 7.5** → Step 8
+- **M 级**：Step 1.5 → 织梭（Step 2A+2B+2C+2D）→ wemedia Step 3 → 织梭（Step 4+4.5）→ 织梭 Step 5 → wemedia Step 6 → Step 7 → 织梭放行 → wemedia **Step 7.5** → Step 8
+- **L 级**：Step 1.5 → 织梭（Step 2全四步 + GPT 仲裁）→ wemedia Step 3 → 织梭（Step 4+4.5）→ 织梭 Step 5 → Step 5.5（衍生评估）→ wemedia Step 6 → Step 7 → 织梭放行 → wemedia **Step 7.5** → Step 8
 
 ### S级与M级在 Step 2 的差异
 

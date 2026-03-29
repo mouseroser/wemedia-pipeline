@@ -36,7 +36,14 @@
 - Step 1：内容队列层（main 维护）
 - Step 1.5：**Publishability Gate（main 守门）** — 判断今天值不值得发，决定是否触发 wemedia
 - Step 2-6：**wemedia persistent session 自治执行** — main 不再逐步编排，通过 `sessions_send` 下发任务
-- Step 7：**晨星确认门控（main 守门）** — wemedia 完成发布包后 sessions_send 回 main → main DM 晨星确认 → main sessions_send 给 wemedia 放行
+- Step 7：**晨星确认门控（main 守门）** — wemedia 完成发布包后 sessions_send 回 main → main 用**带按钮消息** DM 晨星确认 → main sessions_send 给 wemedia 放行
+
+**Step 7 确认消息格式（必须带 inline button）**：
+```
+message(action="send", channel="telegram", target="1099011886",
+  message="📦 发布包就绪 [{内容ID}]\n标题：{标题}\n配图：✅\n发布包：{路径}\n\n确认发布到小红书？",
+  buttons=[[{"text": "✅ 确认发布", "callback_data": "publish:{内容ID}", "style": "success"}, {"text": "❌ 取消", "callback_data": "cancel:{内容ID}", "style": "danger"}]])
+```
 - Step 7.5：晨星确认后，wemedia 执行发布；main 监控结果、补推监控群
 
 **触发 wemedia 方式**：

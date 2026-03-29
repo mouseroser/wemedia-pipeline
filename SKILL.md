@@ -1,6 +1,6 @@
 ---
 name: wemedia-pipeline
-description: 自媒体运营系统 v1.1。用于 24/7 内容运营：Gemini 持续扫描 → main 维护队列 → Publishability Gate → Constitution-First（Gemini 颗粒度对齐 → GPT/OpenAI 宪法边界 → Claude 计划 → Gemini 复核，必要时再仲裁）→ wemedia subagent 端到端创作/配图/平台适配 → 晨星确认门控 → main 通知 wemedia 执行 Step 7.5 发布，wemedia 再调用平台执行 skill（如 xiaohongshu / douyin）。适用于选题发现、内容计划、单条内容生产和日结复盘。
+description: 自媒体运营系统 v1.1。用于 24/7 内容运营：Gemini 持续扫描 → main 维护队列 → Publishability Gate → Constitution-First（S级：2A颗粒度对齐+2B宪法边界；M/L级：2A+2B+2C内容计划+2D复核，必要时GPT仲裁）→ wemedia subagent 端到端创作/配图/平台适配 → 晨星确认门控 → main 通知 wemedia 执行 Step 7.5 发布，wemedia 再调用平台执行 skill（如 xiaohongshu / douyin）。适用于选题发现、内容计划、单条内容生产和日结复盘。
 ---
 
 # 自媒体运营系统 v1.1

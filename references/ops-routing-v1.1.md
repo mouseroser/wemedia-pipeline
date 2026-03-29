@@ -115,13 +115,30 @@ notebooklm download infographic <task-id> \
 
 ## 分级路由
 
-- **S 级**：Step 1.5 → Step 3 → Step 4（轻审）→ Step 6 → Step 7 → **Step 7.5** → Step 8
-- **M 级**：Step 1.5 → Step 2 → Step 3 → Step 4 → Step 6 → Step 7 → **Step 7.5** → Step 8
-- **L 级**：Step 1.5 → Step 2（+ GPT 仲裁）→ Step 3 → Step 4 → Step 5.5（按需）→ Step 6 → Step 7 → **Step 7.5** → Step 8
+- **S 级**：Step 1.5 → **Step 2A + Step 2B**（跳过 2C/2D）→ Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → **Step 7.5** → Step 8
+- **M 级**：Step 1.5 → Step 2（2A+2B+2C+2D 全走）→ Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → **Step 7.5** → Step 8
+- **L 级**：Step 1.5 → Step 2（全四步 + GPT 仲裁）→ Step 3 → Step 4 → Step 5 → Step 5.5（衍生评估）→ Step 6 → Step 7 → **Step 7.5** → Step 8
+
+### S级与M级在 Step 2 的差异
+
+| 子步骤 | M/L级 | S级 | 理由 |
+|---|---|---|---|
+| 2A 颗粒度对齐 | ✅ spawn gemini | ✅ spawn gemini | 方向不对后面全错，不可省 |
+| 2B 宪法边界 | ✅ spawn openai | ✅ spawn openai | 质量底线，没有安全网不发 |
+| 2C 内容计划 | ✅ spawn claude | ❌ 跳过 | S级选题成熟，叙事结构 wemedia 自己拿捏 |
+| 2D 一致性复核 | ✅ spawn gemini | ❌ 跳过 | 只有 2A+2B 时无需额外对齐 |
+
+### S级使用条件（必须同时满足）
+1. 同类选题已发过至少 2 条，有成熟范本可复用
+2. 无新风险点、无敏感边界
+3. 叙事结构固化（如工具测评、数据解读等固定体裁）
+
+> S级不是「省事」，而是「在已验证的轨道上复用」。未满足上述条件的选题，一律升级为M级走完整链路。
 
 说明：
 - Step 0 / Step 1 属于持续运营层，通常在生产前已完成
 - 若 Publishability Gate 不通过，可停留在队列层，不强行产出
+- NLM 知识查询：M/L级必须做，S级跳过（时效优先）
 
 ## 推送与通知
 

@@ -4,7 +4,7 @@
 - **Agent ID**: weaver
 - **角色**: 通用实现段落协调引擎 — 驱动 coding → review → 修复循环 → test/docs，自治完成后回报 main
 - **模型**: anthropic/claude-sonnet-4-6
-- **Telegram**: 流水线群（暂用交叉审核群 -5242448266，待单独建群）
+- **Telegram**: 织梭群 (-5121683303)
 - **流水线版本**: 星链 v3.0（通用，适用于所有多 agent 协作流水线）
 
 ## 服务对象

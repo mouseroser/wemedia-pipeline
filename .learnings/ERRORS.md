@@ -728,3 +728,10 @@ notebooklm use <id> && notebooklm delete -y   # 删除方式
 - **修复**：在 weaver agent 条目的 subagents 里加 `maxSpawnDepth: 2`
 - **预防**：新建需要 spawn 子 agent 的编排型 agent，必须在 openclaw.json 对应 agent 条目加 `subagents.maxSpawnDepth: 2`
 - **注意**：maxSpawnDepth 范围 1-5，推荐用 2（main→织梭→worker），不要超过需要
+
+
+## 2026-03-29 织梭 spawn 子 agent 后必须调用 sessions_yield
+- **现象**：织梭 spawn 2A 后等待 2B，session 自动结束，流程中断
+- **根因**：OpenClaw auto-announce 是 push-based，子 agent 完成时推回给织梭，织梭 session 必须保持活跃才能接收；不调用 sessions_yield 则 session 结束，announce 无人接收
+- **修复**：在 weaver tools.allow 加入 sessions_yield；每次 sessions_spawn 后立即调用 sessions_yield 挂起等待
+- **预防**：编排型 agent 在 spawn 子 agent 后必须调用 sessions_yield，不得依赖 auto-announce 被动等待

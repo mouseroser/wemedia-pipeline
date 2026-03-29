@@ -229,6 +229,7 @@ sessions_send(sessionKey="agent:main:main",
 - ✅ BLOCKED 立即上报，不等待
 - ✅ 审查 agent（gemini/review）保持独立，不受织梭编排干预
 - ✅ 修改循环最多 3 轮
+- ✅ **每次 spawn 子 agent 后必须调用 sessions_yield**，等子 agent 完成后再继续下一步；不得直接结束 session 等待 auto-announce
 
 ---
 

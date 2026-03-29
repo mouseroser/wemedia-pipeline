@@ -1,32 +1,27 @@
-# HEARTBEAT.md — 织梭
+# HEARTBEAT.md - 织梭
 
 ## 原则
+织梭没有主动 heartbeat 职责。
+如果收到 heartbeat，只检查当前是否有挂起任务未完成，有则上报 main，无则回 HEARTBEAT_OK。
 
-织梭是任务驱动型 agent，没有主动任务时不需要 heartbeat 检查。
-如果所有检查正常，回复 `HEARTBEAT_OK`。
+## 检查项
 
-## 1. 当前任务状态
-
-检查是否有进行中的任务未回传 main：
-- 若有进行中任务但超过 30 分钟无进展 → 报告阻塞
-- 若无进行中任务 → 正常
-
-## 2. 待处理 sessions_send
-
-检查是否有需要回传 main 但未发送的结果：
-- 若有 → 立即补发
-- 若无 → 正常
+```bash
+# 是否有未完成的流水线任务
+ls ~/.openclaw/workspace/intel/collaboration/media/wemedia/drafts/A/*.txt 2>/dev/null && echo DRAFT_PENDING || echo NO_DRAFT
+```
 
 ## 输出格式
 
-有问题时：
-```text
-⚠️ <问题类型>
-- 影响：<简述>
-- 是否需要 main 介入：<是/否>
+有挂起任务：
+```
+⚠️ 织梭有未完成任务
+- 内容ID：{id}
+- 当前阶段：{step}
+- 需要 main 介入：是/否
 ```
 
-无问题时：
-```text
+无任务：
+```
 HEARTBEAT_OK
 ```
